@@ -40,6 +40,8 @@ public class QuestionService {
                 .examples(exampleList)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .StaticSolution(dto.isStaticSolution())
+                .checker(dto.getChecker())
                 .build();
 
         Question saved = questionRepository.save(question);

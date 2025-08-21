@@ -41,4 +41,11 @@ public class Question {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    private List<Example> hiddenExamples;
+    private List<String> outputs;
+
+    private Validator checker;
+    private boolean StaticSolution;
+
 }

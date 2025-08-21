@@ -15,5 +15,8 @@ public enum Topic {
     QUEUE,
     HEAP,
     RECURSION,
-    SLIDING_WINDOW
+    SLIDING_WINDOW,
+    DFS,
+    BFS,
+    BINARY_SEARCH
 }

@@ -3,6 +3,7 @@ package com.DsaDude.Question_service.DTO;
 import com.DsaDude.Question_service.Enums.Difficulty;
 import com.DsaDude.Question_service.Enums.Topic;
 import com.DsaDude.Question_service.Model.Example;
+import com.DsaDude.Question_service.Model.Validator;
 import lombok.Data;
 
 import java.util.List;
@@ -15,4 +16,6 @@ public class QuestionDTO {
     private List<String> tags;
     private List<String> constraints;
     private List<Example> examples;
+    private boolean staticSolution;
+    private Validator checker;
 }

@@ -30,4 +30,11 @@ public class QuestionController {
     public ResponseEntity<QuestionService.ApiResponse> getQuestionBySlug(@PathVariable String slug) {
         return questionService.getQuestionBySlug(slug);
     }
+    @PostMapping("/add-multiple")
+    public ResponseEntity<QuestionService.ApiResponse> addMultipleQuestions(@RequestBody List<QuestionDTO> questions) {
+        for(QuestionDTO question : questions) {
+            questionService.addQuestion(question);
+        }
+        return questionService.getAllQuestions();
+    }
 }
