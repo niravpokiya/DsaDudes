@@ -1,6 +1,8 @@
 package com.DsaDude.Question_service.Services;
 
 import com.DsaDude.Question_service.DTO.QuestionDTO;
+import com.DsaDude.Question_service.DTO.Submission;
+import com.DsaDude.Question_service.Feign.SubmissionClient;
 import com.DsaDude.Question_service.Model.Example;
 import com.DsaDude.Question_service.Model.Question;
 import com.DsaDude.Question_service.Repository.QuestionRepository;
@@ -18,6 +20,8 @@ public class QuestionService {
     @Autowired
     private QuestionRepository questionRepository;
 
+    @Autowired
+    private SubmissionClient submissionClient;
     // response wrapper.
     public static record ApiResponse(String message, Object data) {
 
@@ -107,6 +111,25 @@ public class QuestionService {
 
         questionRepository.save(q);
         return ResponseEntity.ok(new ApiResponse("Question updated", q));
+    }
+
+    public ResponseEntity<String> getProblemIdFromSlug(String slug)
+    {
+        String title = slug.replace("-", " ").toLowerCase();
+
+        return questionRepository.findByTitleIgnoreCase(title)
+                .map(q -> ResponseEntity.ok(q.getId()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    public ResponseEntity<ApiResponse> GetSubmissionsByProblemSlug(String slug) {
+        System.out.println(slug);
+        ResponseEntity<List<Submission>> response = submissionClient.getSubmissionsByProblemSlug(slug);
+
+        if (response == null || !response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            return ResponseEntity.status(404).body(new ApiResponse("No submissions found", null));
+        }
+        return ResponseEntity.ok(new ApiResponse("Submissions fetched successfully", response.getBody()));
     }
 
 }

@@ -1,6 +1,7 @@
 package com.DsaDude.submission_service.Services;
 
 import com.DsaDude.submission_service.DTO.SubmissionDTO;
+import com.DsaDude.submission_service.Feign.QuestionClient;
 import com.DsaDude.submission_service.Model.Submission;
 import com.DsaDude.submission_service.Repository.SubmissionRepository;
 import org.apache.coyote.Response;
@@ -15,6 +16,8 @@ import java.util.List;
 public class SubmissionService {
     @Autowired
     private SubmissionRepository submissionRepository;
+    @Autowired
+    private QuestionClient questionClient;
 
     public ResponseEntity<String> addSubmission(SubmissionDTO dto) {
         Submission submission = Submission.builder()
@@ -50,5 +53,17 @@ public class SubmissionService {
     public ResponseEntity<Submission> getSubmission(String submissionId) {
         Submission submission = submissionRepository.getSubmissionById(submissionId);
         return ResponseEntity.ok(submission);
+    }
+
+    public ResponseEntity<List<Submission>> getByProblemSlug(String slug) {
+        ResponseEntity<String> response = questionClient.getQuestionId(slug);
+        System.out.println(response.getBody());
+        if (response == null || !response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        String problemId = response.getBody();
+        List<Submission> submissions = submissionRepository.findByQuestionId(problemId);
+        System.out.println(submissions.size());
+        return ResponseEntity.ok(submissions);
     }
 }

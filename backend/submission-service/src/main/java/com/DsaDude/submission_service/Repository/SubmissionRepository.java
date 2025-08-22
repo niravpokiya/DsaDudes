@@ -11,4 +11,7 @@ import java.util.List;
 public interface SubmissionRepository extends MongoRepository<Submission, String> {
     List<Submission> findByUserIdAndQuestionIdOrderBySubmissionTimeDesc(String userId, String questionId);
     Submission getSubmissionById(String submissionId);
+    List<Submission> findAllByQuestionId(String questionId);
+
+    List<Submission> findByQuestionId(String problemId);
 }

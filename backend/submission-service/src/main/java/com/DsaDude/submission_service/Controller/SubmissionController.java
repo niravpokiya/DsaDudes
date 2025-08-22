@@ -27,5 +27,9 @@ public class SubmissionController {
     public ResponseEntity<Submission> getSubmission(@RequestParam String submissionId) {
         return submissionService.getSubmission(submissionId);
     }
-
+    @GetMapping("/problem/{slug}")
+    public ResponseEntity<List<Submission>> getSubmissionsByProblemSlug(@PathVariable String slug) {
+        return submissionService.getByProblemSlug(slug);
+    }
 }
+    
