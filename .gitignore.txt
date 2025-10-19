@@ -53,6 +53,9 @@ logs/
 coverage/
 .cache/
 .eslintcache
+*.png
+*.jpeg
+*.jpg
 
 # ========== Git ==========
 .gitignore
