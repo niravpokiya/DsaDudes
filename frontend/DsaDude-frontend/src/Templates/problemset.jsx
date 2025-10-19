@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 const ProblemsList = () => {
@@ -28,13 +28,13 @@ const ProblemsList = () => {
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case "EASY":
-        return "text-green-500";
+        return "difficulty-easy";
       case "MEDIUM":
-        return "text-yellow-500";
+        return "difficulty-medium";
       case "HARD":
-        return "text-red-500";
+        return "difficulty-hard";
       default:
-        return "text-gray-400";
+        return "difficulty-easy";
     }
   };
   
@@ -45,84 +45,152 @@ const ProblemsList = () => {
         .replace(/^-+|-+$/g, ""); // trim leading/trailing -
     };
   return (
-  <div className="space-y-6">
-  <h1 className="text-3xl font-bold text-center">Problem List</h1>
+  <div className="page-inner">
+    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      <h1 style={{
+        fontSize: '2.5rem',
+        fontWeight: 'var(--font-weight-bold)',
+        background: 'linear-gradient(135deg, var(--text-primary), var(--text-accent))',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        marginBottom: '0.5rem'
+      }}>
+        Problem List
+      </h1>
+      <p className="text-secondary" style={{ fontSize: '1.125rem' }}>
+        Practice with curated problems and improve your coding skills
+      </p>
+    </div>
 
-  {/* SCROLLABLE TABLE CONTAINER */}
-  <div className="shadow-lg rounded-lg border border-gray-200 dark:border-gray-700   overflow-y-auto">
-    <table className="w-full table-auto text-left">
-      <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-10">
-        <tr>
-          <th className="p-3">#</th>
-          <th className="p-3">Title</th>
-          <th className="p-3">Difficulty</th>
-          <th className="p-3">Tags</th>
-        </tr>
-      </thead>
-      <tbody>
-        {currentProblems.map((problem, idx) => (
-          <tr
-            key={problem.id}
-            className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <td className="p-3">
-              {indexOfFirstProblem + idx + 1}
-            </td>
-            <td className="p-3 font-semibold text-blue-600 dark:text-blue-400">
-                <Link to={`/problems/${generateSlug(problem.title)}`}>
+    {/* Enhanced Table Container */}
+    <div className="problems-card animate-fadeInUp">
+      <div className="problem-list modern-scrollbar">
+        <table className="problems-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Difficulty</th>
+              <th>Tags</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentProblems.map((problem, idx) => (
+              <tr key={problem.id}>
+                <td style={{ 
+                  fontWeight: 'var(--font-weight-medium)',
+                  color: 'var(--text-secondary)',
+                  textAlign: 'center'
+                }}>
+                  {indexOfFirstProblem + idx + 1}
+                </td>
+                <td>
+                  <Link 
+                    to={`/problems/${generateSlug(problem.title)}`}
+                    style={{
+                      color: 'var(--text-accent)',
+                      textDecoration: 'none',
+                      fontWeight: 'var(--font-weight-medium)',
+                      fontSize: '1rem'
+                    }}
+                  >
                     {problem.title}
-                </Link>
-            </td>
-            <td className={`p-3 font-medium ${getDifficultyColor(problem.difficulty)}`}>
-              {problem.difficulty}
-            </td>
-            <td className="p-3 text-sm text-gray-500 dark:text-gray-400 space-x-1">
-              {problem.tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="inline-block bg-gray-700 text-white text-sm px-3 py-1 rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
+                  </Link>
+                </td>
+                <td>
+                  <span className={`output-badge ${getDifficultyColor(problem.difficulty)}`}>
+                    {problem.difficulty}
+                  </span>
+                </td>
+                <td>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {problem.tags.map((tag, tagIdx) => (
+                      <span
+                        key={tagIdx}
+                        style={{
+                          background: 'var(--bg-accent)',
+                          color: 'var(--text-secondary)',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: 'var(--radius)',
+                          fontSize: '0.75rem',
+                          fontWeight: 'var(--font-weight-medium)',
+                          border: '1px solid var(--border-primary)'
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-  {/* PAGE CONTROL */}
-  <div className="flex justify-center items-center space-x-2">
-    <button
-      className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
-      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-      disabled={currentPage === 1}
-    >
-      Prev
-    </button>
-    {Array.from({ length: totalPages }, (_, i) => (
+    {/* Enhanced Pagination */}
+    <div className="pagination">
       <button
-        key={i + 1}
-        className={`px-3 py-1 rounded ${
-          currentPage === i + 1
-            ? "bg-blue-500 text-white"
-            : "bg-gray-200 dark:bg-gray-700"
-        }`}
-        onClick={() => setCurrentPage(i + 1)}
+        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+        disabled={currentPage === 1}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}
       >
-        {i + 1}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Prev
       </button>
-    ))}
-    <button
-      className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
-      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-      disabled={currentPage === totalPages}
-    >
-      Next
-    </button>
+      
+      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+        let pageNum;
+        if (totalPages <= 7) {
+          pageNum = i + 1;
+        } else if (currentPage <= 4) {
+          pageNum = i + 1;
+        } else if (currentPage >= totalPages - 3) {
+          pageNum = totalPages - 6 + i;
+        } else {
+          pageNum = currentPage - 3 + i;
+        }
+        
+        return (
+          <button
+            key={pageNum}
+            className={currentPage === pageNum ? 'active' : ''}
+            onClick={() => setCurrentPage(pageNum)}
+            style={{
+              background: currentPage === pageNum ? 'var(--text-accent)' : 'var(--bg-tertiary)',
+              color: currentPage === pageNum ? 'var(--bg-primary)' : 'var(--text-primary)',
+              borderColor: currentPage === pageNum ? 'var(--text-accent)' : 'var(--border-primary)'
+            }}
+          >
+            {pageNum}
+          </button>
+        );
+      })}
+      
+      <button
+        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+        disabled={currentPage === totalPages}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}
+      >
+        Next
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
   </div>
-</div>
 
   );
 };

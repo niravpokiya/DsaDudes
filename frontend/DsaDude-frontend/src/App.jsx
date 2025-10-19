@@ -1,12 +1,9 @@
-import { useState } from 'react' 
-import './App.css'
-import Editor from "@monaco-editor/react";
-import NavBar from './Templates/navigation';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import './App.css';
 import Layout from './Layout/layout';
 import Home from './Templates/Home';
-import ProblemsList from './Templates/problemset';
 import ProblemsPage from './Templates/problem-page';
+import ProblemsList from './Templates/problemset';
 
 
 function App() {

@@ -24,7 +24,7 @@ export default async function CompareOutputs(outputs, examples, staticSolution, 
           stdin: `${examples[i].input}\n${actual}`,
         };
         console.log(`${examples[i].input}${actual}`)
-        const res = await fetch("http://localhost:8085/api/execute", {
+        const res = await fetch("http://localhost:8083/api/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestBody),
@@ -33,7 +33,7 @@ export default async function CompareOutputs(outputs, examples, staticSolution, 
         const data = await res.json();
         const verdict = (data.run.stdout || "").trim();
         results.push(verdict === "1" ? 1 : 0);
-      } catch (err) {
+      } catch {
         results.push(0);
       }
     }

@@ -24,7 +24,4 @@ public class AuthController {
     public User getUser() {
         return userService.findUser();
     }
-
-
-
 }

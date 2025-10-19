@@ -1,39 +1,147 @@
 @import "tailwindcss";
 
-html, body {
-  height: max-content;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  background-color: #000000; /* Pure black background */
-  color: #F1F5F9; /* Light text */
-}
-
+/* Enhanced Layout Components */
 #root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
+  background: var(--bg-primary);
 }
 
 .main-content {
   flex: 1;
-  background-color: #0F172A; /* Dark navy for content area */
-  padding: 1.5rem;
+  background: transparent;
+  padding: 2rem 0;
+  display: flex;
+  justify-content: center;
 }
 
+/* Enhanced Problem List */
 .problem-list {
-  max-height: calc(100vh - 100px); /* Adjust based on header/footer height */
+  max-height: calc(100vh - 200px);
   overflow-y: auto;
-  scrollbar-width: thin; /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-primary) transparent;
 }
 
 .problem-list::-webkit-scrollbar {
-  width: 6px; /* Chrome/Safari/Edge */
+  width: 8px;
+}
+
+.problem-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .problem-list::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
+  background: var(--border-primary);
+  border-radius: var(--radius);
+  transition: background var(--transition-fast);
+}
+
+.problem-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-accent);
+}
+
+/* Enhanced Page Layout */
+.page-inner {
+  width: 100%;
+  /* increased max-width so problem page uses more horizontal space */
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Enhanced Problems Card */
+.problems-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.problems-card:hover {
+  border-color: var(--border-primary);
+  box-shadow: var(--shadow-md);
+}
+
+/* Enhanced Table */
+.problems-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.problems-table thead th {
+  background: var(--bg-secondary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-primary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.problems-table tbody tr {
+  transition: all var(--transition-fast);
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.problems-table tbody tr:hover {
+  background: var(--bg-accent);
+  transform: scale(1.005);
+}
+
+.problems-table tbody td {
+  padding: 1rem;
+  color: var(--text-primary);
+}
+
+/* Enhanced Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.pagination button {
+  min-width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-primary);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+}
+
+.pagination button:hover:not(:disabled) {
+  background: var(--bg-accent);
+  border-color: var(--text-accent);
+  transform: translateY(-1px);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination button.active {
+  background: var(--text-accent);
+  color: var(--bg-primary);
+  border-color: var(--text-accent);
 }
 
