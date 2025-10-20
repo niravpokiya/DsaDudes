@@ -1,14 +1,15 @@
 import Editor from "@monaco-editor/react";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import languageSnippets from "../snippets/snippet";
 import ValidateOutput from "../Helpers/OutputValidator";
+import { UserContext } from "../Context/userContext";
 
 export default function ProblemsPage() {
   const { slug } = useParams();
   const [problem, setProblem] = useState(null);
-  const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState(languageSnippets["javascript"].code);
+  const [language, setLanguage] = useState("cpp");
+  const [code, setCode] = useState(languageSnippets["cpp"].code);
   const [running, setRunning] = useState(false);
   const [selectedTest, setSelectedTest] = useState(0);
   const [sampleOutputs, setSampleOutputs] = useState([]);
@@ -18,7 +19,8 @@ export default function ProblemsPage() {
   const [gotCorrectOutput, setGotCorrectOutput] = useState([]);
   const [showFullError, setShowFullError] = useState(false);
   const MAX_OUTPUT_LENGTH = 128; // adjust as needed
-
+  const {user, loading} = useContext(UserContext)
+  
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case "EASY":
@@ -28,10 +30,14 @@ export default function ProblemsPage() {
       case "HARD":
         return "difficulty-hard";
       default:
-        return "difficulty-easy";
+        return "difficulty-easy";f
     }
   };
-
+  useEffect(() => {
+    if (user && user.current_selected_language) {
+      setLanguage(user.current_selected_language);
+    }
+  }, [user]);
 
   useEffect(() => {
     fetch(`http://localhost:8080/api/question/${slug}`)
@@ -308,7 +314,7 @@ export default function ProblemsPage() {
                   Language:
                 </label>
                 <select 
-                  value={language} 
+                  value={language}
                   onChange={(e) => setLanguage(e.target.value)}
                   style={{
                     background: 'var(--bg-accent)',

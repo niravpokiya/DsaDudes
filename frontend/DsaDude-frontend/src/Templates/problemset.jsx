@@ -1,21 +1,40 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Await, Link } from "react-router-dom";
 
 const ProblemsList = () => {
-  const [problems, setProblems] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const problemsPerPage = 30;
+    const [problems, setProblems] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const problemsPerPage = 30;
 
-  useEffect(() => {
-    fetch("http://localhost:8080/api/question/all")
-      .then((res) => res.json())
-      .then((data) => {
-        // Assuming API returns { data: [ {id, title, difficulty, tags} ] }
-        if (data.data) {
-          setProblems(data.data);
+    useEffect(() => {
+    const fetchProblems = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await fetch("http://localhost:8080/api/question/all", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": token ? `Bearer ${token}` : "",
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            alert("You are not authorized. Please login.");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      })
-      .catch((err) => console.error(err));
+
+        const data = await response.json();
+        setProblems(data.data);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to fetch problems.");
+      }
+    };
+
+    fetchProblems();
   }, []);
 
   // Pagination logic

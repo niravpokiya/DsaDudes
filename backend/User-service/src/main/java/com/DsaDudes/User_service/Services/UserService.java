@@ -14,6 +14,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 public class UserService {
     @Autowired
@@ -42,13 +45,24 @@ public class UserService {
         return ResponseEntity.ok().body("success !");
     }
 
-    public ResponseEntity<String> verify(UserDTO user) {
-        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
-        if(auth.isAuthenticated())
-            return ResponseEntity.ok(jwtService.generateJWTToken(user));
-        else
-            return ResponseEntity.badRequest().body("Authentication failed. Please try again.");
+    public ResponseEntity<Map<String, Object>> verify(UserDTO user) {
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+        );
+
+        if (auth.isAuthenticated()) {
+            User existingUser = userRepository.findByUsername(user.getUsername());
+            String token = jwtService.generateJWTToken(user);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("user", new UserDTO(existingUser));
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid credentials"));
+        }
     }
+
     public User findUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.isAuthenticated() == false || auth.getPrincipal() == null) {
@@ -57,4 +71,14 @@ public class UserService {
         String username = auth.getName();
         return userRepository.findByUsername(username);
     }
+
+    public User getUserFromToken(String token) {
+        try {
+            String username = jwtService.extractUsername(token);
+            return userRepository.findByUsername(username);
+        } catch (Exception e) {
+            return null; // invalid token
+        }
+    }
+
 }

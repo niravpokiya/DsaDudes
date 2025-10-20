@@ -31,7 +31,8 @@ public class Question {
     private List<Example> examples;
     private List<String> constraints;
     private List<String> hints;
-
+    private int total_submissions;
+    private int accepted_submissions;
     private Solution solution;
 
     private boolean isPremium;

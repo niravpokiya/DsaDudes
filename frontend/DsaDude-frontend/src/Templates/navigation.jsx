@@ -1,7 +1,10 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import logout from '../security/logout';
 
 const NavBar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const isLoggedIn = !!localStorage.getItem('token');
   
   const navItems = [
     { path: "/", label: "Home" },
@@ -26,7 +29,7 @@ const NavBar = () => {
           >
             DSADude
           </Link>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 items-center">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -47,6 +50,26 @@ const NavBar = () => {
                 </Link>
               );
             })}
+            {isLoggedIn ? (
+              <button
+                onClick={() => {
+                  logout();
+                  navigate('/');
+                }}
+                className="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-secondary hover:text-primary hover:bg-accent"
+                style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+              >
+                Logout
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/', { state: { authRequired: true } })}
+                className="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-secondary hover:text-primary hover:bg-accent"
+                style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+              >
+                Login
+              </button>
+            )}
           </div>
         </div>
       </div>

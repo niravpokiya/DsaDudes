@@ -36,6 +36,10 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+    private String profilePhoto;
+    private String bio;
+    // for saving current selected language in dropdown list at problem page...
+     private String current_selected_language = "cpp";
 
     @PrePersist
     protected void onCreate() {

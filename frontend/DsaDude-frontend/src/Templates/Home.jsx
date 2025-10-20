@@ -1,5 +1,31 @@
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Login from '../Security/Login';
+import Register from '../Security/Register';
 
 const Home = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [activeTab, setActiveTab] = useState('login');
+
+    useEffect(() => {
+        if (location.state && location.state.authRequired) {
+            setShowAuthModal(true);
+            setActiveTab('login');
+            // Clear the navigation state so modal does not persist on refresh/back
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location, navigate]);
+
+    const handleAuthSuccess = () => {
+        setShowAuthModal(false);
+        // Navigate to home and reload so navbar updates immediately based on localStorage token
+        navigate('/', { replace: true });
+        // Force a full reload to ensure all components read new auth state
+        window.location.reload();
+    };
+
     return (
         <div className="page-inner animate-fadeInUp">
             <div className="card hover-lift" style={{
@@ -153,6 +179,41 @@ const Home = () => {
                     </div>
                 ))}
             </div>
+
+            {/* Auth Modal */}
+            {showAuthModal && (
+                <div className="fixed inset-0 z-[999] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/60" onClick={() => setShowAuthModal(false)} />
+                    <div className="relative w-full max-w-md mx-4 rounded-lg border border-[var(--border-primary)] shadow-2xl" style={{ background: 'var(--bg-tertiary)' }}>
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-secondary)]">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    className={`px-3 py-1 rounded ${activeTab === 'login' ? 'bg-[var(--bg-accent)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] border border-[var(--border-primary)]'}`}
+                                    onClick={() => setActiveTab('login')}
+                                >
+                                    Login
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`px-3 py-1 rounded ${activeTab === 'register' ? 'bg-[var(--bg-accent)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] border border-[var(--border-primary)]'}`}
+                                    onClick={() => setActiveTab('register')}
+                                >
+                                    Register
+                                </button>
+                            </div>
+                            <button type="button" className="btn-ghost" onClick={() => setShowAuthModal(false)}>✕</button>
+                        </div>
+                        <div className="p-5">
+                            {activeTab === 'login' ? (
+                                <Login onSuccess={handleAuthSuccess} onToggle={() => setActiveTab('register')} />
+                            ) : (
+                                <Register onSuccess={handleAuthSuccess} onToggle={() => setActiveTab('login')} />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

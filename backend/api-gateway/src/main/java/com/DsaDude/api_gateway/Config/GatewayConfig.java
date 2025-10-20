@@ -1,5 +1,7 @@
 package com.DsaDude.api_gateway.Config;
 
+import com.DsaDude.api_gateway.Auth.JwtFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -14,40 +16,19 @@ import java.util.Collections;
 public class GatewayConfig {
 
     @Bean
-    public RouteLocator customRoutes(RouteLocatorBuilder builder) {
+    public RouteLocator customRoutes(RouteLocatorBuilder builder, JwtFilter jwtFilter) {
         return builder.routes()
                 // Question Service
+                .route("User-service", r -> r.path("/api/user/**").uri("http://localhost:8084"))
+                .route("User-service", r -> r.path("/api/auth/**").uri("http://localhost:8084"))
                 .route("Question-service", r -> r.path("/api/question/**")
-                        // Keep full path; do NOT strip prefix
                         .uri("http://localhost:8081"))
-
-                // Submission Service
                 .route("Submission-service", r -> r.path("/api/submission/**")
+                        .filters(f -> f.filter(jwtFilter))
                         .uri("http://localhost:8082"))
-
-                // Code Execution Service
                 .route("Code-execution-service", r -> r.path("/api/code/**")
+                        .filters(f -> f.filter(jwtFilter))
                         .uri("http://localhost:8083"))
-
-                // User Service
-                .route("User-service", r -> r.path("/api/user/**")
-                        .uri("http://localhost:8084"))
-
                 .build();
     }
-
-//    @Bean
-//    public CorsWebFilter corsWebFilter() {
-//        CorsConfiguration corsConfig = new CorsConfiguration();
-//        corsConfig.setAllowedOrigins(Collections.singletonList("http://localhost:5173")); // your frontend
-//        corsConfig.addAllowedHeader("*");
-//        corsConfig.addAllowedMethod("*");
-//        corsConfig.setAllowCredentials(true);
-//        corsConfig.setMaxAge(3600L);
-//
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", corsConfig);
-//
-//        return new CorsWebFilter(source);
-//    }
 }
