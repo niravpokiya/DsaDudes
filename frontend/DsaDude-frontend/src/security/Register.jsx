@@ -24,8 +24,6 @@ const Register = ({ onSuccess, onToggle }) => {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Registration successful! Please login.");
-
         // Optionally store token if backend returns it
         if (data.token) {
           localStorage.setItem("token", data.token);

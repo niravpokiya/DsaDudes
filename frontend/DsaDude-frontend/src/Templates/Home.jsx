@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { UserContext } from '../Context/userContext';
 import Login from '../Security/Login';
 import Register from '../Security/Register';
 
@@ -8,6 +9,7 @@ const Home = () => {
     const navigate = useNavigate();
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [activeTab, setActiveTab] = useState('login');
+    const { setUser, showToast } = useContext(UserContext);
 
     useEffect(() => {
         if (location.state && location.state.authRequired) {
@@ -20,10 +22,24 @@ const Home = () => {
 
     const handleAuthSuccess = () => {
         setShowAuthModal(false);
-        // Navigate to home and reload so navbar updates immediately based on localStorage token
+        
+        // Update user context with stored user data
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Failed to parse stored user:", e);
+            }
+        }
+        
+        // Navigate to home without reload
         navigate('/', { replace: true });
-        // Force a full reload to ensure all components read new auth state
-        window.location.reload();
+        
+        // Show success toast after navigation
+        setTimeout(() => {
+            if (showToast) showToast('Welcome! You are now signed in');
+        }, 100);
     };
 
     return (
