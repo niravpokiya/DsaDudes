@@ -26,5 +26,8 @@ public class CodeExecutionController {
             return new CodeResponse("", "Execution failed: " + e.getMessage(), -1, 0);
         }
     }
+    @PostMapping("/run-hidden/{problemslug}")
+    public CodeResponse runCodeHidden(@PathVariable String problemslug, @RequestBody CodeRequest request) {
 
+    }
 }
