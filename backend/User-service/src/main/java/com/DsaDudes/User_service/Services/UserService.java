@@ -27,22 +27,28 @@ public class UserService {
     private AuthenticationManager authenticationManager;
     @Autowired
     private JWTService jwtService;
-    public ResponseEntity<String> registerUser(UserDTO user) {
-        if(userRepository.existsUserByEmail(user.email)) {
-            return ResponseEntity.badRequest().body("Email Already Exists");
-        }
-        if(userRepository.existsUserByUsername(user.username)) {
-            return ResponseEntity.badRequest().body("Username Already Exists");
-        }
-        User newUser = new User();
+    public ResponseEntity<Map<String, Object>> registerUser(UserDTO user) {
+        Map<String, Object> response = new HashMap<>();
 
+        if (userRepository.existsUserByEmail(user.email)) {
+            response.put("error", "Email Already Exists");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        if (userRepository.existsUserByUsername(user.username)) {
+            response.put("error", "Username Already Exists");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        User newUser = new User();
         newUser.setUsername(user.username);
         newUser.setPassword(passwordEncoder.encode(user.password));
         newUser.setEmail(user.email);
         newUser.setRole(Role.USER);
         userRepository.save(newUser);
 
-        return ResponseEntity.ok().body("success !");
+        response.put("message", "success !");
+        return ResponseEntity.ok(response);
     }
 
     public ResponseEntity<Map<String, Object>> verify(UserDTO user) {

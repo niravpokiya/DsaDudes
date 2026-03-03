@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 //db in pokiyanirav2@gmail.com -> mongodb atlas.
 @SpringBootApplication
-@EnableFeignClients
+@EnableFeignClients(basePackages = "com.DsaDude.Question_service.Feign")
 public class QuestionServiceApplication {
 
 	public static void main(String[] args)	 {

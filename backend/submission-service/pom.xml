@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.4</version>
+		<version>3.3.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.DsaDude</groupId>
@@ -13,6 +13,10 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>submission-service</name>
 	<description>submissions handling service for user.</description>
+	<properties>
+		<java.version>21</java.version>
+		<spring-cloud.version>2023.0.3</spring-cloud.version>
+	</properties>
 	<url/>
 	<licenses>
 		<license/>
@@ -26,9 +30,6 @@
 		<tag/>
 		<url/>
 	</scm>
-	<properties>
-		<java.version>21</java.version>
-	</properties>
 	<dependencies>
 		<!-- Web + JPA -->
 
@@ -39,16 +40,15 @@
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-netflix-eureka-client -->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-			<version>4.3.0</version>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>org.springframework.cloud</groupId>-->
+<!--			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>-->
+<!--			<version>4.3.0</version>-->
+<!--		</dependency>-->
 
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-openfeign</artifactId>
-			<version>4.3.0</version>
 		</dependency>
 		<!-- Lombok -->
 		<dependency>
@@ -69,7 +69,17 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<build>
 		<plugins>
 			<plugin>
@@ -88,6 +98,7 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+
 		</plugins>
 	</build>
 
