@@ -56,6 +56,17 @@
   }
 }
 
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Hover effects */
 @keyframes bounce {
   0%, 20%, 53%, 80%, 100% {

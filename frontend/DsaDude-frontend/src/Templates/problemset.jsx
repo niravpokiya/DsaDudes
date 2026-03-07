@@ -177,7 +177,6 @@ const ProblemsList = () => {
         } else {
           pageNum = currentPage - 3 + i;
         }
-        
         return (
           <button
             key={pageNum}

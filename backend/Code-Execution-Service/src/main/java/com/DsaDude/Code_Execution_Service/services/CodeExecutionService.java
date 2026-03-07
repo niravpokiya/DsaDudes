@@ -69,7 +69,9 @@ public class CodeExecutionService {
         final QuestionServiceClient.ValidatorDTO validator =
                 questionDTO.isStaticSolution() ? null : questionDTO.getChecker();
 
-        Path problemDir = Path.of(basePath, problemSlug);
+        Path base = Path.of(basePath).toAbsolutePath().normalize();
+        Path problemDir = base.resolve(problemSlug);
+        System.out.println("Path : " + problemDir);
         if (!Files.exists(problemDir)) {
             throw new RuntimeException("Testcases not found for problem: " + problemSlug);
         }
@@ -110,8 +112,8 @@ public class CodeExecutionService {
                     ? "Passed " + passed + " / " + total + " testcases"
                     : messageBuilder.toString());
             response.setTime(total_time);
-            return response;
 
+            return response;
         } catch (IOException | InterruptedException | ExecutionException e) {
             HiddenTestResponse errorResponse = new HiddenTestResponse();
             errorResponse.setPassed(0);

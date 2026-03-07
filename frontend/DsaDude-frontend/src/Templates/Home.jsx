@@ -1,6 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { UserContext } from '../Context/userContext';
 import Login from '../Security/Login';
 import Register from '../Security/Register';
 
@@ -9,37 +8,19 @@ const Home = () => {
     const navigate = useNavigate();
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [activeTab, setActiveTab] = useState('login');
-    const { setUser, showToast } = useContext(UserContext);
 
     useEffect(() => {
         if (location.state && location.state.authRequired) {
             setShowAuthModal(true);
             setActiveTab('login');
-            // Clear the navigation state so modal does not persist on refresh/back
             navigate(location.pathname, { replace: true, state: {} });
         }
     }, [location, navigate]);
-
+    
     const handleAuthSuccess = () => {
         setShowAuthModal(false);
-        
-        // Update user context with stored user data
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (e) {
-                console.error("Failed to parse stored user:", e);
-            }
-        }
-        
-        // Navigate to home without reload
         navigate('/', { replace: true });
-        
-        // Show success toast after navigation
-        setTimeout(() => {
-            if (showToast) showToast('Welcome! You are now signed in');
-        }, 100);
+        window.location.reload();
     };
 
     return (
