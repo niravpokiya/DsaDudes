@@ -19,7 +19,7 @@ function Profile() {
             <h3 className="text-lg font-semibold mb-3">Progress Overview</h3>
             <ProfileStats user={user} />
           </div>
-          <ProfileHeatmap activityByDate={{}} />
+          <ProfileHeatmap userId={user.id} />
         </div>
         <div className="space-y-4">
           <ProfileAbout user={user} />

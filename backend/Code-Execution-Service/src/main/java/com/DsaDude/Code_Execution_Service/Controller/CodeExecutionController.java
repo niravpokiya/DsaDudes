@@ -3,6 +3,7 @@ import com.DsaDude.Code_Execution_Service.DTO.CodeRequest;
 import com.DsaDude.Code_Execution_Service.DTO.CodeResponse;
 import com.DsaDude.Code_Execution_Service.DTO.HiddenTestResponse;
 import com.DsaDude.Code_Execution_Service.Entities.Submission;
+import com.DsaDude.Code_Execution_Service.Repository.SubmissionRepository;
 import com.DsaDude.Code_Execution_Service.services.CodeExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +15,8 @@ public class CodeExecutionController {
 
     @Autowired
     private CodeExecutionService codeExecutionService;
-
+    @Autowired
+    private SubmissionRepository submissionRepository;
     @PostMapping("/run")
     public CodeResponse runCode(@RequestBody CodeRequest request) {
         try {
@@ -31,6 +33,7 @@ public class CodeExecutionController {
     @PostMapping("/run-hidden/{problemslug}")
     public HiddenTestResponse runOnHiddenTestcases(@PathVariable String problemslug, @RequestBody CodeRequest request) {
             // ehre nee dto add tje mongo submisson
+
         System.out.println("USERID : " + request.getUserId());
         HiddenTestResponse response = codeExecutionService.runHiddenTestcases(problemslug, request.getCode(), request.getLanguage());
         Submission submission = new Submission();
@@ -39,6 +42,7 @@ public class CodeExecutionController {
         submission.setUserID(request.getUserId());
         submission.setQuestionSlug(problemslug);
         submission.setOutput(response);
+        submissionRepository.save(submission);
         return response;
     }
 }

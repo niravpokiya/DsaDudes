@@ -20,7 +20,7 @@ public class JwtFilter implements GatewayFilter {
         String path = exchange.getRequest().getURI().getPath();
 
         // Allow login/register without JWT
-        if (path.startsWith("/api/user/") || path.startsWith("/api/code/run")) {
+        if (path.startsWith("/api/user/") || path.startsWith("/api/code/run") || path.startsWith("/api/submissions/")) {
             return chain.filter(exchange);
         }
 
