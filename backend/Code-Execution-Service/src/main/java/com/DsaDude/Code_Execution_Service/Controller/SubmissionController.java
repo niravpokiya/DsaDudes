@@ -1,5 +1,6 @@
 package com.DsaDude.Code_Execution_Service.Controller;
 
+import com.DsaDude.Code_Execution_Service.Entities.Submission;
 import com.DsaDude.Code_Execution_Service.Repository.SubmissionRepository;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -61,5 +63,14 @@ public class SubmissionController {
         Date end = Date.from(localDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
 
         return submissionRepository.countByUserIDAndCreatedBetween(userId, start, end);
+    }
+
+    @GetMapping("/")
+    public List<Submission> getSubmissions(@RequestParam int userId) {
+        return submissionRepository.getSubmissionsByUserID(userId);
+    }
+    @GetMapping("/get")
+    public Submission getSubmission(@RequestParam String submissionId) {
+        return submissionRepository.getSubmissionById(submissionId);
     }
 }

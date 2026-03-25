@@ -6,6 +6,8 @@ import ProblemsPage from './Templates/problem-page';
 import ProblemsList from './Templates/problemset';
 import ProtectedRoute from './Security/ProtectedRoute';
 import Profile from './Templates/profile';
+import SubmissionsList from './Templates/submissions';
+import SubmissionDetail from './Templates/submissionDetail';
 
 
 function App() {
@@ -28,6 +30,18 @@ function App() {
           <Route path='/profile' element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/submissions" element={
+            <ProtectedRoute>
+              <SubmissionsList />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/submissions/:submissionId" element={
+            <ProtectedRoute>
+              <SubmissionDetail />
             </ProtectedRoute>
           } />
           </Route>
