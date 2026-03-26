@@ -22,12 +22,12 @@ public class GatewayConfig {
                 .route("User-service", r -> r.path("/api/auth/**").uri("http://localhost:8084"))
                 .route("Question-service", r -> r.path("/api/question/**")
                         .uri("http://localhost:8081"))
-                .route("Code-execution-service", r -> r.path("/api/submissions/**")
+                .route("Execution-worker-service", r -> r.path("/api/submissions/**")
                         .filters(f -> f.filter(jwtFilter))
-                        .uri("http://localhost:8083"))
-                .route("Code-execution-service", r -> r.path("/api/code/**")
+                        .uri("http://localhost:8092"))
+                .route("Execution-worker-service", r -> r.path("/api/code/**")
                         .filters(f -> f.filter(jwtFilter))
-                        .uri("http://localhost:8083"))
+                        .uri("http://localhost:8092"))
                 .build();
     }
 }

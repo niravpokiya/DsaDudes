@@ -10,7 +10,7 @@ async function SubmitCode(code, language, problemSlug, userId = null) {
   }
 
   try {
-    const response = await fetch(`http://localhost:8080/api/code/run-hidden/${problemSlug}`, {
+    const response = await fetch(`http://localhost:8080/api/code/run`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -20,6 +20,8 @@ async function SubmitCode(code, language, problemSlug, userId = null) {
         code: code,
         language: language,
         userId: userId,
+        problemSlug: problemSlug,
+        typeOfJob: "SUBMIT"
       }),
     });
 

@@ -92,6 +92,7 @@ export default function ProblemsPage() {
       const input = problem.examples[i].input;
 
       try {
+        // old : http://localhost:8080/api/code/run
         const res = await fetch("http://localhost:8080/api/code/run", {
           method: "POST",
           headers: {
@@ -102,6 +103,7 @@ export default function ProblemsPage() {
             code,
             language,
             input,
+            typeOfJob: "Run"
           }),
         });
 
