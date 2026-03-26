@@ -10,6 +10,9 @@
         <option value="$PROJECT_DIR$/service-registry/pom.xml" />
         <option value="$PROJECT_DIR$/submission-service/pom.xml" />
         <option value="$PROJECT_DIR$/Code-Execution-Service/pom.xml" />
+        <option value="$PROJECT_DIR$/../../extra/Code-Execution-Service/pom.xml" />
+        <option value="$PROJECT_DIR$/Execution-worker-Service/pom.xml" />
+        <option value="$PROJECT_DIR$/Execution-Submission-Service/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">

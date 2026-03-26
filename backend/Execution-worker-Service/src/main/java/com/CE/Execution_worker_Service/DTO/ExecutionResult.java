@@ -16,4 +16,5 @@ public class ExecutionResult {
         this.error = error;
         this.status = status;
     }
+    public ExecutionResult() {}
 }

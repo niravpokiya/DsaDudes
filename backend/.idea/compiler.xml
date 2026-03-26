@@ -8,9 +8,11 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="api-gateway" />
+        <module name="Execution-worker-Service" />
+        <module name="Execution-Submission-Service" />
         <module name="service-registry" />
       </profile>
-      <profile name="Annotation profile for User-service" enabled="true">
+      <profile name="Annotation profile for Code-Execution-Service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -18,17 +20,19 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.32/lombok-1.18.32.jar" />
         </processorPath>
         <module name="User-service" />
+        <module name="Code-Execution-Service" />
         <module name="Question-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="Code-Execution-Service" target="21" />
       <module name="submission-service" target="21" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="Code-Execution-Service" options="-parameters" />
+      <module name="Execution-Submission-Service" options="-parameters" />
+      <module name="Execution-worker-Service" options="-parameters" />
       <module name="Question-service" options="-parameters" />
       <module name="User-service" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
