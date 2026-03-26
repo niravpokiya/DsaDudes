@@ -1,0 +1,272 @@
+.sd-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.sd-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* ── Header ── */
+.sd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sd-back-link {
+  display: inline-block;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+.sd-back-link:hover { color: var(--text-secondary); }
+
+.sd-title {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+/* ── Status badge ── */
+.sd-status-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.sd-badge-accepted  { background: var(--success); color: #fff; }
+.sd-badge-wrong     { background: var(--error);   color: #fff; }
+.sd-badge-error     { background: #6c757d;        color: #fff; }
+.sd-badge-pending   { background: var(--warning); color: #1a0800; }
+
+/* ── Cards ── */
+.sd-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.sd-card-title {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Stats grid ── */
+.sd-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+@media (max-width: 640px) {
+  .sd-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.sd-stat-box {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+}
+.sd-stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+.sd-stat-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+/* ── Test results ── */
+.sd-section-title {
+  margin: 1.25rem 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sd-results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.sd-result-box {
+  border-radius: var(--radius);
+  padding: 0.85rem 0.5rem;
+  text-align: center;
+}
+.sd-result-box.passed { background: var(--success); }
+.sd-result-box.failed { background: var(--error); }
+.sd-result-box.total  { background: var(--warning); }
+
+.sd-result-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.88);
+  margin-bottom: 0.3rem;
+}
+.sd-result-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.sd-message-box {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  word-break: break-all;
+}
+
+.sd-error-box {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--error-bg);
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--error);
+  line-height: 1.55;
+  word-break: break-all;
+}
+
+/* ── Code card ── */
+.sd-code-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.sd-code-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-tertiary);
+}
+.sd-code-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sd-code-body { padding: 0.5rem; }
+
+.sd-code-footer {
+  padding: 0.5rem 1.25rem;
+  border-top: 1px solid var(--border-primary);
+  background: var(--bg-tertiary);
+}
+.sd-toggle-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-accent);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.75rem;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.sd-toggle-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+/* ── Actions ── */
+.sd-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sd-btn-primary {
+  padding: 0.55rem 1.2rem;
+  background: var(--text-accent);
+  color: #1a0a00;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: var(--radius);
+  border: none;
+  text-decoration: none;
+  transition: filter var(--transition-fast);
+}
+.sd-btn-primary:hover { filter: brightness(1.1); }
+
+.sd-btn-secondary {
+  padding: 0.55rem 1.2rem;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-primary);
+  text-decoration: none;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.sd-btn-secondary:hover {
+  background: var(--bg-accent);
+  color: var(--text-primary);
+}
+
+/* ── Loading / error states ── */
+.sd-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 16rem;
+}
+.sd-spinner {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid var(--border-primary);
+  border-top-color: var(--text-accent);
+  animation: sd-spin 0.7s linear infinite;
+}
+@keyframes sd-spin { to { transform: rotate(360deg); } }
+
+.sd-state-center {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+.sd-state-text {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
