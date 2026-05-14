@@ -2,10 +2,23 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { UserContext } from "../Context/userContext";
 import ValidateOutput from "../Helpers/OutputValidator";
-import SubmitCode from "../Helpers/SubmitCode";
+import SubmitCode, { RunSampleTest } from "../Helpers/SubmitCode";
 import languageSnippets from "../snippets/snippet";
-import ProblemSidebar from "./problem-sidebar";
 import EditorArea from "./editor-area";
+import ProblemSidebar from "./problem-sidebar";
+
+// Helper function to normalize output for comparison
+function normalizeOutput(output) {
+  if (!output) return "";
+
+  return output
+    .trim() // Remove leading/trailing whitespace
+    .replace(/\n+$/, "") // Remove trailing newlines
+    .replace(/\r/g, "") // Remove carriage returns
+    .replace(/\t/g, " ") // Replace tabs with spaces
+    .replace(/\s+/g, " ") // Replace multiple spaces with single space
+    .trim(); // Final trim
+}
 
 export default function ProblemsPage() {
   const { slug } = useParams();
@@ -84,7 +97,6 @@ export default function ProblemsPage() {
   async function runCodeForSamples() {
     if (!problem) return;
     setRunning(true);
-
     const outputs = [];
     const results = []; // 1 = pass, 0 = fail
 
@@ -92,42 +104,35 @@ export default function ProblemsPage() {
       const input = problem.examples[i].input;
 
       try {
-        // old : http://localhost:8080/api/code/run
-        const res = await fetch("http://localhost:8080/api/code/run", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            code,
-            language,
-            input,
-            typeOfJob: "Run"
-          }),
-        });
+        // Use the new RunSampleTest function
 
-        let data;
-        if (res.ok) {
-          data = await res.json();
-        } else {
-          data = {
-            output: "",
-            error: `Backend Error: ${res.status}`,
-            exitCode: -1,
-            time: 0,
-          };
-        }
+        const data = await RunSampleTest(
+          code,
+          language,
+          input,
+          slug,
+          user ? user.id : null,
+        );
+
         outputs.push(data);
 
-        // 🔹 Compare output (trim whitespace/newlines)
-        const expected = problem.examples[i].output.trim();
-        const actual = (data.output || "").trim();
+        // Compare output with flexible normalization
+        const expected = problem.examples[i].output;
+        const actual = data.output || "";
 
-        if (problem.staticSolution) {
-          results.push(expected === actual ? 1 : 0);
+        if (expected === actual) {
+          results.push(1);
+        } else if (problem.staticSolution) {
+          results.push(0);
         } else {
-          const verdict = await ValidateOutput(problem.checker, input, actual);
+          const verdict = await ValidateOutput(
+            problem.checker,
+            input,
+            actual,
+            slug,
+            user ? user.id : null,
+          );
+
           results.push(verdict ? 1 : 0);
         }
       } catch (err) {
@@ -142,19 +147,34 @@ export default function ProblemsPage() {
       }
     }
 
+    console.log("🔴 Final results:");
+    console.log("Outputs:", outputs);
+    console.log("Results:", results);
+    console.log("Setting sample outputs and results...");
+
     setSampleOutputs(outputs);
     setGotCorrectOutput(results);
     setRunning(false);
+
+    console.log("✅ runCodeForSamples completed");
   }
 
-  // Submit handler - calls the helper and stores the result to show in UI
+  // Enhanced submit handler with better result handling
   async function handleSubmitClick() {
-    if (!problem) return;
+    if (!problem || !user) {
+      alert("Please login to submit code");
+      return;
+    }
+
     setSubmitting(true);
+    setSubmissionResult(null); // Clear previous results
+
     try {
-      const res = await SubmitCode(code, language, slug, user ? user.id : null);
-      if (res) {
-        // Create submission object with timestamp
+      // Submit with real-time status updates
+      const res = await SubmitCode(code, language, slug, user.id);
+
+      if (res && res.completed) {
+        // Create comprehensive submission object
         const submission = {
           ...res,
           id: Date.now(),
@@ -162,16 +182,103 @@ export default function ProblemsPage() {
           code: code,
           language: language,
           problemSlug: slug,
+          problemTitle: problem.title,
+          userId: user.id,
+          username: user.username,
+          // Enhanced result information
+          verdict: res.verdict || "UNKNOWN",
+          status: res.status || "UNKNOWN",
+          executionTime: res.time || 0,
+          output: res.output || "",
+          error: res.error || "",
+          // UI state
+          expanded: false,
+          showDetails: false,
         };
+
         setSubmissionResult(submission);
-        // Auto-switch to submissions tab with attention-grabbing effect
+
+        // Auto-switch to submissions tab to show results
+        setActiveTab("submissions");
+
+        // Show user-friendly notification
+        showSubmissionNotification(submission);
+      } else {
+        // Handle failed submission
+        const failedSubmission = {
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          code: code,
+          language: language,
+          problemSlug: slug,
+          problemTitle: problem.title,
+          userId: user.id,
+          username: user.username,
+          verdict: "SYSTEM_ERROR",
+          status: "FAILED",
+          executionTime: 0,
+          output: "",
+          error: res.error || "Submission failed",
+          expanded: false,
+          showDetails: false,
+        };
+
+        setSubmissionResult(failedSubmission);
         setActiveTab("submissions");
       }
     } catch (err) {
       console.error("Submit error", err);
+
+      // Create error submission object
+      const errorSubmission = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        code: code,
+        language: language,
+        problemSlug: slug,
+        problemTitle: problem.title,
+        userId: user.id,
+        username: user.username,
+        verdict: "SYSTEM_ERROR",
+        status: "FAILED",
+        executionTime: 0,
+        output: "",
+        error: err.message || "Network error occurred",
+        expanded: false,
+        showDetails: false,
+      };
+
+      setSubmissionResult(errorSubmission);
+      setActiveTab("submissions");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Helper function to show submission notifications
+  function showSubmissionNotification(submission) {
+    const verdictColors = {
+      ACCEPTED: "#10b981",
+      WRONG_ANSWER: "#ef4444",
+      TIME_LIMIT_EXCEEDED: "#f59e0b",
+      RUNTIME_ERROR: "#ef4444",
+      COMPILE_ERROR: "#ef4444",
+      SYSTEM_ERROR: "#ef4444",
+    };
+
+    const verdictMessages = {
+      ACCEPTED: "🎉 Accepted! Your solution passed all test cases!",
+      WRONG_ANSWER: "❌ Wrong Answer. Some test cases failed.",
+      TIME_LIMIT_EXCEEDED: "⏱️ Time Limit Exceeded. Your code was too slow.",
+      RUNTIME_ERROR: "💥 Runtime Error. Your code crashed.",
+      COMPILE_ERROR: "🔥 Compilation Error. Code doesn't compile.",
+      SYSTEM_ERROR: "🚨 System Error. Please try again.",
+    };
+
+    // You could integrate this with a toast notification system
+    console.log(
+      `Submission ${submission.verdict}: ${verdictMessages[submission.verdict]}`,
+    );
   }
 
   if (!problem)

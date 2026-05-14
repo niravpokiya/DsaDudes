@@ -1,9 +1,10 @@
 package com.CE.Execution_worker_Service.Service;
 
+import com.CE.Execution_worker_Service.Client.ExecutionSubmissionClient;
 import com.CE.Execution_worker_Service.Client.QuestionServiceClient;
 import com.CE.Execution_worker_Service.DTO.ExecutionJob;
 import com.CE.Execution_worker_Service.DTO.ExecutionResult;
-import io.netty.util.concurrent.CompleteFuture;
+import com.CE.Execution_worker_Service.DTO.SubmissionUpdate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,12 +24,19 @@ import java.util.concurrent.Future;
 @Slf4j
 @Service
 public class CodeExecutionConsumer {
+
     @Autowired
     ContainerPoolManager containerPoolManager;
+
     @Autowired
     QuestionServiceClient questionServiceClient;
+
     @Autowired
     RedisService redisService;
+
+    @Autowired
+    ExecutionSubmissionClient submissionClient;
+
     @Value("${testcase.storage.path:testcase}")
     private String basePath;
 
@@ -36,15 +44,14 @@ public class CodeExecutionConsumer {
             topics = "execution-jobs",
             groupId = "executor-group"
     )
-
     public void consume(ExecutionJob job) {
-        if("RUN".equals(job.getTypeOfJob())) {
-            runCode(job);
+        if ("RUN".equals(job.getTypeOfJob())) {
+            runCode(job);   // direct run (no submission update here)
         } else {
-            // extract each hidden testcase...
-            RunOnHiddenTestcases(job);
+            RunOnHiddenTestcases(job);  // final submission flow
         }
     }
+
     private String readFile(Path path) {
         try {
             return Files.readString(path);
@@ -52,16 +59,18 @@ public class CodeExecutionConsumer {
             throw new RuntimeException("Failed to read file: " + path);
         }
     }
+
     public void RunOnHiddenTestcases(ExecutionJob job) {
+
         String jobId = job.getJobId();
+        String submissionId = jobId;
+
         redisService.markRunning(jobId);
 
         String slug = job.getProblemSlug();
 
-        QuestionServiceClient.ApiResponse<QuestionServiceClient.QuestionDTO> apiResponse =
-                questionServiceClient.getQuestionBySlug(slug);
-
-        QuestionServiceClient.QuestionDTO questionDTO = apiResponse.getData();
+        var apiResponse = questionServiceClient.getQuestionBySlug(slug);
+        var questionDTO = apiResponse.getData();
 
         Path base = Path.of(basePath).toAbsolutePath().normalize();
         Path problemDir = base.resolve(slug);
@@ -73,8 +82,6 @@ public class CodeExecutionConsumer {
 
         List<CompletableFuture<ExecutionResult>> futures = new ArrayList<>();
 
-        /* - taking input files
-           - making stream of files with .in extension */
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(problemDir, "*.in")) {
 
             for (Path inputFile : stream) {
@@ -92,12 +99,11 @@ public class CodeExecutionConsumer {
                         runCode(newJob)
                                 .thenCompose(result -> {
 
-                                    // ❌ If execution failed → return as is
                                     if (!"SUCCESS".equals(result.getStatus())) {
                                         return CompletableFuture.completedFuture(result);
                                     }
 
-                                    // ✅ STATIC OUTPUT CHECK
+                                    // STATIC CHECK
                                     if (questionDTO.isStaticSolution()) {
 
                                         String fileName = inputFile.getFileName().toString().replace(".in", ".out");
@@ -114,24 +120,22 @@ public class CodeExecutionConsumer {
                                         return CompletableFuture.completedFuture(result);
                                     }
 
-                                    // ✅ VALIDATOR FLOW
-                                    else {
-                                        ExecutionJob validatorJob = new ExecutionJob();
-                                        validatorJob.setJobId(newJob.getJobId() + "_validator");
-                                        validatorJob.setInput(input + "\n" + result.getOutput());
-                                        validatorJob.setSourceCode(questionDTO.getChecker().getCode());
-                                        validatorJob.setLanguage(questionDTO.getChecker().getLanguage());
+                                    // VALIDATOR FLOW
+                                    ExecutionJob validatorJob = new ExecutionJob();
+                                    validatorJob.setJobId(newJob.getJobId() + "_validator");
+                                    validatorJob.setInput(input + "\n" + result.getOutput());
+                                    validatorJob.setSourceCode(questionDTO.getChecker().getCode());
+                                    validatorJob.setLanguage(questionDTO.getChecker().getLanguage());
 
-                                        return runCode(validatorJob);
-                                    }
+                                    return runCode(validatorJob);
                                 });
 
                 futures.add(future);
             }
 
-            // 🔥 Combine all futures
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                     .thenRun(() -> {
+
                         long passed = 0;
                         long total = futures.size();
                         long totalTime = 0;
@@ -140,7 +144,7 @@ public class CodeExecutionConsumer {
 
                         for (CompletableFuture<ExecutionResult> f : futures) {
                             try {
-                                ExecutionResult res = f.join(); // safe after allOf
+                                ExecutionResult res = f.join();
 
                                 totalTime += res.getExecutionTimeMs();
 
@@ -155,13 +159,24 @@ public class CodeExecutionConsumer {
                             }
                         }
 
+                        SubmissionUpdate dto = new SubmissionUpdate();
+                        dto.setTotalTestCases((int) total);
+                        dto.setPassedTestCases((int) passed);
+                        dto.setExecutionTime(totalTime);
+                        dto.setMemoryUsed(0L);
+
                         if (passed == total) {
+                            dto.setVerdict("ACCEPTED");
+
                             redisService.markCompleted(
                                     jobId,
                                     "Passed all " + total + " testcases",
                                     totalTime
                             );
                         } else {
+                            dto.setVerdict("WRONG_ANSWER");
+                            dto.setErrorMessage(errorMessage.toString());
+
                             redisService.markError(
                                     jobId,
                                     "FAILED",
@@ -169,22 +184,51 @@ public class CodeExecutionConsumer {
                                     totalTime
                             );
                         }
+
+                        // 🔥 FINAL SUBMISSION UPDATE
+                        try {
+                            submissionClient.updateSubmission(submissionId, dto);
+                        } catch (Exception e) {
+                            log.error("Submission update failed: {}", e.getMessage());
+                        }
+
                     })
                     .exceptionally(ex -> {
-                        redisService.markError(
-                                jobId,
-                                "SYSTEM_ERROR",
-                                ex.getMessage(),
-                                0
-                        );
+
+                        redisService.markError(jobId, "SYSTEM_ERROR", ex.getMessage(), 0);
+
+                        SubmissionUpdate dto = new SubmissionUpdate();
+                        dto.setVerdict("SYSTEM_ERROR");
+                        dto.setErrorMessage(ex.getMessage());
+
+                        try {
+                            submissionClient.updateSubmission(submissionId, dto);
+                        } catch (Exception e) {
+                            log.error("Submission update failed: {}", e.getMessage());
+                        }
+
                         return null;
                     });
 
         } catch (Exception e) {
+
             redisService.markError(jobId, "ERROR", e.getMessage(), 0);
+
+            SubmissionUpdate dto = new SubmissionUpdate();
+            dto.setVerdict("ERROR");
+            dto.setErrorMessage(e.getMessage());
+
+            try {
+                submissionClient.updateSubmission(submissionId, dto);
+            } catch (Exception ex) {
+                log.error("Submission update failed: {}", ex.getMessage());
+            }
         }
     }
+
+    // 🔥 COMPLETE runCode METHOD
     public CompletableFuture<ExecutionResult> runCode(ExecutionJob job) {
+
         String jobId = job.getJobId();
 
         try {
@@ -192,6 +236,7 @@ public class CodeExecutionConsumer {
 
             return containerPoolManager.executeCpp(job)
                     .thenApply(result -> {
+
                         String status = result.getStatus();
 
                         if ("SUCCESS".equals(status)) {
@@ -212,14 +257,14 @@ public class CodeExecutionConsumer {
                         return result;
                     })
                     .exceptionally(ex -> {
+
                         redisService.markError(
                                 jobId,
                                 "SYSTEM_ERROR",
-                                ex.toString(),
+                                ex.getMessage(),
                                 0
                         );
 
-                        // return fallback result instead of null (better practice)
                         return new ExecutionResult(
                                 "SYSTEM_ERROR",
                                 0,
@@ -229,6 +274,7 @@ public class CodeExecutionConsumer {
                     });
 
         } catch (Exception e) {
+
             redisService.markError(
                     jobId,
                     "ERROR",
@@ -237,7 +283,7 @@ public class CodeExecutionConsumer {
             );
 
             return CompletableFuture.completedFuture(
-                    new ExecutionResult("ERROR", 0, e.getMessage(), "COMPLETED")
+                    new ExecutionResult("ERROR", 0, e.getMessage(), "")
             );
         }
     }

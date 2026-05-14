@@ -1,33 +1,35 @@
+import { RunSampleTest } from "./SubmitCode";
 
-async function ValidateOutput(checker, input, userOutput) {
+async function ValidateOutput(checker, input, userOutput, problemSlug, userId) {
   if (!checker || !checker.code || !checker.language) {
     console.error("No validator provided for this problem.");
     return 0;
   }
-
   try {
-    const validatorInput = `${input}\n${userOutput}`;
+    const validatorInput = `${input}${userOutput}`;  
+    
+    console.log("Validator input : "  + validatorInput)
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:8080/api/code/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`,
-                },
-      body: JSON.stringify({
-        code: checker.code,
-        language: checker.language,
-        input: validatorInput,
-      }),
-    });
+    const res = await RunSampleTest(checker.code, checker.language, validatorInput, problemSlug, userId)
+    // const res = await fetch("http://localhost:8080/api/code/run", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json",
+    //               "Authorization": `Bearer ${token}`,
+    //             },
+    //   body: JSON.stringify({
+    //     sourceCode: checker.code,
+    //     language: checker.language,
+    //     input: validatorInput,
+    //     problemSlug,
+    //     userId: userId || null,
+    //     typeOfJob: "RUN"
+    //   }),
+    // });
 
-    if (!res.ok) {
-      console.error("Validator API error:", res.status);
-      return 0;
-    }
-
-    const data = await res.json();
-    const validatorOutput = (data.output || "").trim().toLowerCase();
-    console.log(validatorOutput);
+    const data = res;
+    console.log("validator : ")
+    console.log(data)
+    const validatorOutput = (data.output || "").trim().toLowerCase(); 
     // If validator prints "PASS" or "SUCCESS" anywhere → test passed
     if (validatorOutput.includes("pass") || validatorOutput.includes("success")) {
       return 1;

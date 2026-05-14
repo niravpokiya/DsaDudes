@@ -10,6 +10,7 @@ public class ExecutionResult {
     private long executionTimeMs;
     private String error;
     private String status;
+    private String verdict;
     public ExecutionResult(String output, long executionTimeMs) {
         this.output = output;
         this.executionTimeMs = executionTimeMs;

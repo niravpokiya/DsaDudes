@@ -18,7 +18,7 @@
   --text-primary: #ffffff; /* Primary text */
   --text-secondary: #b3b3b3; /* Secondary text */
   --text-muted: #808080; /* Muted text */
-  --text-accent: #ffa116; /* Accent text (LeetCode orange) */
+  --text-accent: #8b5cf6; /* Accent text (Purple) */
   
   --border-primary: #404040; /* Primary borders */
   --border-secondary: #2d2d2d; /* Secondary borders */
@@ -26,8 +26,8 @@
   /* Status Colors */
   --success: #00b8a3; /* LeetCode green */
   --success-bg: rgba(0, 184, 163, 0.1);
-  --warning: #ffa116; /* LeetCode orange */
-  --warning-bg: rgba(255, 161, 22, 0.1);
+  --warning: #a78bfa; /* Purple warning */
+  --warning-bg: rgba(167, 139, 250, 0.1);
   --error: #ff4d4f; /* Error red */
   --error-bg: rgba(255, 77, 79, 0.1);
   --info: #1890ff; /* Info blue */
@@ -36,8 +36,8 @@
   /* Difficulty Colors */
   --easy: #00b8a3;
   --easy-bg: rgba(0, 184, 163, 0.1);
-  --medium: #ffa116;
-  --medium-bg: rgba(255, 161, 22, 0.1);
+  --medium: #8b5cf6;
+  --medium-bg: rgba(139, 92, 246, 0.1);
   --hard: #ff4d4f;
   --hard-bg: rgba(255, 77, 79, 0.1);
 
@@ -319,7 +319,7 @@ button:focus-visible {
 
 /* Enhanced Button Variants */
 .btn-primary {
-  background: linear-gradient(135deg, var(--text-accent), #ff8c00);
+  background: linear-gradient(135deg, var(--text-accent), #7c3aed);
   color: var(--bg-primary);
   border: none;
   padding: 0.75rem 1.5rem;
@@ -442,7 +442,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--text-accent);
-  box-shadow: 0 0 0 3px rgba(255, 161, 22, 0.1);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
   background: var(--bg-secondary);
 }
 
