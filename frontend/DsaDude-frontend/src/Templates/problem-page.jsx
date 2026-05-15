@@ -7,19 +7,6 @@ import languageSnippets from "../snippets/snippet";
 import EditorArea from "./editor-area";
 import ProblemSidebar from "./problem-sidebar";
 
-// Helper function to normalize output for comparison
-function normalizeOutput(output) {
-  if (!output) return "";
-
-  return output
-    .trim() // Remove leading/trailing whitespace
-    .replace(/\n+$/, "") // Remove trailing newlines
-    .replace(/\r/g, "") // Remove carriage returns
-    .replace(/\t/g, " ") // Replace tabs with spaces
-    .replace(/\s+/g, " ") // Replace multiple spaces with single space
-    .trim(); // Final trim
-}
-
 export default function ProblemsPage() {
   const { slug } = useParams();
   const [problem, setProblem] = useState(null);
@@ -34,11 +21,41 @@ export default function ProblemsPage() {
   const [gotCorrectOutput, setGotCorrectOutput] = useState([]);
   const [showFullError, setShowFullError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submissionState, setSubmissionState] = useState(null);
   const [submissionResult, setSubmissionResult] = useState(null);
-  const [activeTab, setActiveTab] = useState("description"); // "description" or "submissions"
+  const [activeTab, setActiveTab] = useState("description");
+  const [showResultTab, setShowResultTab] = useState(false);
+  const [submissions, setSubmissions] = useState([]);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [hasLoadedSubmissions, setHasLoadedSubmissions] = useState(false);
   const MAX_OUTPUT_LENGTH = 128; // adjust as needed
-  const { user, loading } = useContext(UserContext);
-  const token = localStorage.getItem("token");
+  const { user } = useContext(UserContext);
+
+  const mapSubmissionRecord = (submission) => {
+    if (!submission || typeof submission !== "object") {
+      return null;
+    }
+
+    return {
+      id: submission.id || submission.submissionId || `${Date.now()}-${Math.random()}`,
+      userId: submission.userId,
+      questionId: submission.questionId,
+      problemSlug: submission.problemSlug,
+      sourceCode: submission.sourceCode || submission.code || "",
+      language: submission.language || "",
+      codeLength: submission.codeLength,
+      verdict: submission.verdict || "UNKNOWN",
+      status: submission.status || "UNKNOWN",
+      executionTime: submission.executionTime ?? submission.executionTimeMs ?? submission.time,
+      memoryUsed: submission.memoryUsed,
+      totalTestcases: submission.totalTestcases ?? submission.total ?? 0,
+      passedTestcases: submission.passedTestcases ?? submission.passed ?? 0,
+      failedTestcases: submission.failedTestcases,
+      errorMessage: submission.errorMessage || submission.error || "",
+      submissionTime: submission.submissionTime || submission.timestamp || new Date().toISOString(),
+    };
+  };
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
@@ -65,6 +82,70 @@ export default function ProblemsPage() {
       .then((data) => setProblem(data.data))
       .catch((err) => console.error(err));
   }, [slug]);
+
+  useEffect(() => {
+    setSubmissions([]);
+    setSelectedSubmission(null);
+    setLoadingSubmissions(false);
+    setHasLoadedSubmissions(false);
+  }, [slug]);
+
+  useEffect(() => {
+    const loadSubmissions = async () => {
+      if (activeTab !== "submissions" || !user?.id || hasLoadedSubmissions || loadingSubmissions) {
+        return;
+      }
+
+      setLoadingSubmissions(true);
+
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setSubmissions([]);
+          setHasLoadedSubmissions(true);
+          return;
+        }
+
+        const response = await fetch(`http://localhost:8080/api/submissions/all-submissions/${user.id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          console.error("Failed to fetch submissions", response.status);
+          setSubmissions([]);
+          setHasLoadedSubmissions(true);
+          return;
+        }
+
+        const text = await response.text();
+        const payload = text ? JSON.parse(text) : [];
+        const list = Array.isArray(payload)
+          ? payload
+          : (Array.isArray(payload?.data) ? payload.data : []);
+
+        const filtered = list
+          .map(mapSubmissionRecord)
+          .filter((entry) => entry && entry.problemSlug === slug)
+          .sort((a, b) => new Date(b.submissionTime).getTime() - new Date(a.submissionTime).getTime());
+
+        setSubmissions(filtered);
+        setHasLoadedSubmissions(true);
+      } catch (error) {
+        console.error("Error loading submissions", error);
+        setSubmissions([]);
+        setHasLoadedSubmissions(true);
+      } finally {
+        setLoadingSubmissions(false);
+      }
+    };
+
+    loadSubmissions();
+  }, [activeTab, user?.id, slug, hasLoadedSubmissions, loadingSubmissions]);
 
   useEffect(() => {
     setCode(languageSnippets[language].code);
@@ -167,11 +248,51 @@ export default function ProblemsPage() {
     }
 
     setSubmitting(true);
+    setShowResultTab(true);
+    setActiveTab("result");
+    setSubmissionState({
+      phase: "submitting",
+      status: "PENDING",
+      verdict: "PENDING",
+      passed: 0,
+      total: problem?.examples?.length || 0,
+      executionTimeMs: 0,
+      language,
+      error: "",
+      message: "Submitting Solution...",
+      timestamp: new Date().toISOString(),
+      sourceCode: code,
+      code,
+      problemTitle: problem.title,
+      problemSlug: slug,
+    });
     setSubmissionResult(null); // Clear previous results
 
     try {
       // Submit with real-time status updates
-      const res = await SubmitCode(code, language, slug, user.id);
+      const res = await SubmitCode(code, language, slug, user.id, (update) => {
+        const nextStatus = (update?.status || update?.verdict || "").toString().toUpperCase();
+        const phase = nextStatus === "RUNNING" || nextStatus === "PENDING" || nextStatus === "QUEUED" ? "running" : nextStatus === "COMPLETED" || nextStatus === "SUCCESS" || update?.completed ? "final" : "running";
+
+        setSubmissionState((current) => ({
+          ...(current || {}),
+          ...update,
+          phase,
+          status: update?.status || current?.status || "RUNNING",
+          verdict: update?.verdict || current?.verdict || "RUNNING",
+          passed: Number(update?.passed ?? current?.passed ?? 0),
+          total: Number(update?.total ?? current?.total ?? (problem?.examples?.length || 0)),
+          executionTimeMs: Number(update?.executionTimeMs ?? update?.executionTime ?? current?.executionTimeMs ?? 0),
+          language: update?.language || current?.language || language,
+          error: update?.error ?? current?.error ?? "",
+          message: update?.message || current?.message || "",
+          timestamp: current?.timestamp || new Date().toISOString(),
+          sourceCode: update?.sourceCode || current?.sourceCode || code,
+          code: update?.sourceCode || current?.code || code,
+          problemTitle: problem.title,
+          problemSlug: slug,
+        }));
+      });
 
       if (res && res.completed) {
         // Create comprehensive submission object
@@ -197,9 +318,14 @@ export default function ProblemsPage() {
         };
 
         setSubmissionResult(submission);
-
-        // Auto-switch to submissions tab to show results
-        setActiveTab("submissions");
+        setSubmissionState({
+          phase: "final",
+          ...submission,
+          executionTimeMs: res.executionTimeMs ?? res.time ?? 0,
+          sourceCode: code,
+          code,
+        });
+        setHasLoadedSubmissions(false);
 
         // Show user-friendly notification
         showSubmissionNotification(submission);
@@ -224,7 +350,14 @@ export default function ProblemsPage() {
         };
 
         setSubmissionResult(failedSubmission);
-        setActiveTab("submissions");
+        setSubmissionState({
+          phase: "final",
+          ...failedSubmission,
+          executionTimeMs: 0,
+          sourceCode: code,
+          code,
+        });
+        setHasLoadedSubmissions(false);
       }
     } catch (err) {
       console.error("Submit error", err);
@@ -249,7 +382,14 @@ export default function ProblemsPage() {
       };
 
       setSubmissionResult(errorSubmission);
-      setActiveTab("submissions");
+        setSubmissionState({
+          phase: "final",
+          ...errorSubmission,
+          executionTimeMs: 0,
+          sourceCode: code,
+          code,
+        });
+      setHasLoadedSubmissions(false);
     } finally {
       setSubmitting(false);
     }
@@ -257,15 +397,6 @@ export default function ProblemsPage() {
 
   // Helper function to show submission notifications
   function showSubmissionNotification(submission) {
-    const verdictColors = {
-      ACCEPTED: "#10b981",
-      WRONG_ANSWER: "#ef4444",
-      TIME_LIMIT_EXCEEDED: "#f59e0b",
-      RUNTIME_ERROR: "#ef4444",
-      COMPILE_ERROR: "#ef4444",
-      SYSTEM_ERROR: "#ef4444",
-    };
-
     const verdictMessages = {
       ACCEPTED: "🎉 Accepted! Your solution passed all test cases!",
       WRONG_ANSWER: "❌ Wrong Answer. Some test cases failed.",
@@ -322,13 +453,25 @@ export default function ProblemsPage() {
       style={{ background: "var(--bg-primary)" }}
     >
       <div className="page-inner" style={{ width: "100%", height: "100%" }}>
-        <div className="flex gap-4 h-full">
+        <div className="flex gap-4 h-full" style={{ alignItems: "stretch", minWidth: 0, flexWrap: "nowrap" }}>
           <ProblemSidebar
             problem={problem}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            showResultTab={showResultTab}
+            onCloseResultTab={() => {
+              setShowResultTab(false);
+              if (activeTab === "result") {
+                setActiveTab("description");
+              }
+            }}
             submitting={submitting}
+            submissionState={submissionState}
             submissionResult={submissionResult}
+            submissions={submissions}
+            selectedSubmission={selectedSubmission}
+            setSelectedSubmission={setSelectedSubmission}
+            loadingSubmissions={loadingSubmissions}
             setCode={setCode}
             setLanguage={setLanguage}
             getDifficultyColor={getDifficultyColor}

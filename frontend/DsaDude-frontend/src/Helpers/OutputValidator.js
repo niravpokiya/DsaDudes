@@ -27,8 +27,6 @@ async function ValidateOutput(checker, input, userOutput, problemSlug, userId) {
     // });
 
     const data = res;
-    console.log("validator : ")
-    console.log(data)
     const validatorOutput = (data.output || "").trim().toLowerCase(); 
     // If validator prints "PASS" or "SUCCESS" anywhere → test passed
     if (validatorOutput.includes("pass") || validatorOutput.includes("success")) {

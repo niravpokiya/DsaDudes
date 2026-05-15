@@ -1,4 +1,3 @@
-import React from "react";
 import Editor from "@monaco-editor/react";
 
 export default function EditorArea({
@@ -8,7 +7,6 @@ export default function EditorArea({
   code,
   setCode,
   editorHeight,
-  setEditorHeight,
   isResizing,
   running,
   runCodeForSamples,
@@ -20,13 +18,13 @@ export default function EditorArea({
   gotCorrectOutput,
   showFullError,
   setShowFullError,
-  setSubmissionResult,
-  setActiveTab,
 }) {
   return (
     <div
-      className="w-3/5 flex flex-col h-full animate-fadeInRight"
+      className="flex flex-col h-full animate-fadeInRight"
       style={{
+        flex: "1 1 auto",
+        minWidth: 0,
         background: "var(--bg-secondary)",
         borderRadius: "var(--radius-lg)",
         overflow: "hidden",

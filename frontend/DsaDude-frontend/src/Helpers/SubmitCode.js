@@ -1,4 +1,4 @@
-async function SubmitCode(code, language, problemSlug, userId = null) {
+async function SubmitCode(code, language, problemSlug, userId = null, onStatusUpdate = null) {
   const token = localStorage.getItem("token");
   if(userId == null) {
     console.alert("User ID is required to submit code. but not found. ");
@@ -33,8 +33,8 @@ async function SubmitCode(code, language, problemSlug, userId = null) {
     }
 
     const result = await response.json();
- 
-    return result; // you can handle this result in UI
+    const id = result.jobId;
+    return PollForSubmission(id, token, 60, 1000, onStatusUpdate); // you can handle this result in UI
 
   } catch (error) {
     console.error("Error submitting code:", error);
@@ -121,7 +121,8 @@ async function pollForResult(jobId, token, maxAttempts = 30, intervalMs = 1000, 
   let consecutiveErrors = 0;
   const maxConsecutiveErrors = 3;
 
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  for (let attempt = 0; attempt
+     < maxAttempts; attempt++) {
     try {
       const response = await fetch(`http://localhost:8080/api/code/${jobId}`, {
         method: "GET",
@@ -212,6 +213,108 @@ async function pollForResult(jobId, token, maxAttempts = 30, intervalMs = 1000, 
   return createErrorResult("Execution timeout after " + maxAttempts + " attempts", maxAttempts);
 }
 
+async function PollForSubmission(
+  jobId,
+  token,
+  maxAttempts = 60,
+  intervalMs = 1000,
+  onStatusUpdate = null
+) {
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+
+    try {
+
+      const response = await fetch(
+        `http://localhost:8080/api/code/submit/${jobId}`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      if (!response.ok) {
+
+        if (attempt === maxAttempts - 1) {
+          throw new Error(
+            `Polling failed with status ${response.status}`
+          );
+        }
+
+        await new Promise(resolve => setTimeout(resolve, intervalMs));
+        continue;
+      }
+
+      const result = await response.json();
+
+      console.log("Polling Result:", result);
+
+      const status =
+        result.status?.toUpperCase();
+
+      // realtime UI updates
+      if (onStatusUpdate) {
+        onStatusUpdate(result);
+      }
+
+      // still executing
+      if (
+        status === "RUNNING" ||
+        status === "PENDING" ||
+        status === "QUEUED"
+      ) {
+
+        await new Promise(resolve => setTimeout(resolve, intervalMs));
+        continue;
+      }
+
+      // execution finished
+      return {
+        completed: true,
+        status: result.status,
+        verdict: result.verdict,
+        passed: Number(result.passed || 0),
+        total: Number(result.total || 0),
+        executionTimeMs: Number(
+          result.executionTimeMs || 0
+        ),
+        sourceCode: result.sourceCode || "",
+        language: result.language || "",
+        error: result.error || "",
+        raw: result
+      };
+
+    } catch (error) {
+
+      console.error(
+        `Polling error attempt ${attempt + 1}`,
+        error
+      );
+
+      if (attempt === maxAttempts - 1) {
+        return {
+          completed: false,
+          status: "ERROR",
+          verdict: "SYSTEM_ERROR",
+          error: error.message
+        };
+      }
+
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+  }
+
+  return {
+    completed: false,
+    status: "TIMEOUT",
+    verdict: "TIMEOUT",
+    error: "Polling timeout exceeded"
+  };
+}
+
 // Helper functions for enhanced polling
 function mapExecutionStatus(status, verdict) {
   // Map backend status to frontend-friendly status
@@ -253,7 +356,7 @@ function isTerminalState(status, verdict) {
          verdict === "SYSTEM_ERROR";
 }
 
-function getStatusMessage(mappedStatus, attempt) {
+function getStatusMessage(mappedStatus) {
   const messages = {
     "QUEUED": "Job queued, waiting to start...",
     "RUNNING": "Executing code...",
@@ -295,7 +398,7 @@ function createSuccessResult(result, mappedStatus) {
   };
 }
 
-function createErrorResult(errorMessage, attempts, result = null) {
+function createErrorResult(errorMessage, _attempts, result = null) {
   return {
     output: result?.output || "",
     error: errorMessage,
@@ -304,9 +407,9 @@ function createErrorResult(errorMessage, attempts, result = null) {
     verdict: result?.verdict || "ERROR",
     status: "FAILED",
     completed: false,
-    attempts: attempts
+    attempts: _attempts
   };
 }
 
-export { SubmitCode, RunSampleTest };
+export { RunSampleTest, SubmitCode };
 export default SubmitCode;
