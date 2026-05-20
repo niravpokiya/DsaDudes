@@ -315,7 +315,7 @@ body {
 
 /* Main Content Styles */
 .main-content {
-  padding: 2rem;
+  padding: 0 2rem 2rem 2rem;
   min-height: calc(100vh - 4rem);
 }
 

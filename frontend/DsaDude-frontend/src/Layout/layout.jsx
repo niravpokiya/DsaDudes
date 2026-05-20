@@ -15,5 +15,5 @@ const Layout = () => {
       </main>
     </div>
   );
-};  
+};
 export default Layout;

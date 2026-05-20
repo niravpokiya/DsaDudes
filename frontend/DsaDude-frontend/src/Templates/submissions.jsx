@@ -41,26 +41,29 @@ const SubmissionsList = () => {
   const sortedSubmissions = useMemo(() => {
     setPage(1);
     return [...submissions].sort((a, b) => {
-      const aTime = new Date(a?.created || a?.timestamp || 0).getTime();
-      const bTime = new Date(b?.created || b?.timestamp || 0).getTime();
+      const aTime = new Date(a?.createdAt || 0).getTime();
+      const bTime = new Date(b?.createdAt || 0).getTime();
       return bTime - aTime;
     });
   }, [submissions]);
 
   const getStatusMeta = (submission) => {
-    if (submission.error || submission.exitCode !== 0) {
-      return { label: 'Compilation Error', variant: 'status-error' };
+    if (submission.verdict === 'ACCEPTED') {
+      return { label: 'Accepted', variant: 'status-accepted', icon: '✓' };
     }
-
-    if (submission.output?.failed > 0) {
-      return { label: 'Wrong Answer', variant: 'status-wrong' };
+    if (submission.verdict === 'WRONG_ANSWER') {
+      return { label: 'Wrong Answer', variant: 'status-wrong', icon: '✗' };
     }
-
-    if (submission.output?.passed === submission.output?.total && submission.output?.total > 0) {
-      return { label: 'Accepted', variant: 'status-accepted' };
+    if (submission.verdict === 'TIME_LIMIT_EXCEEDED') {
+      return { label: 'TLE', variant: 'status-error', icon: '⏱' };
     }
-
-    return { label: 'Pending', variant: 'status-pending' };
+    if (submission.verdict === 'RUNTIME_ERROR') {
+      return { label: 'Runtime Error', variant: 'status-error', icon: '!' };
+    }
+    if (submission.errorMessage) {
+      return { label: 'Compilation Error', variant: 'status-error', icon: '!' };
+    }
+    return { label: 'Pending', variant: 'status-pending', icon: '...' };
   };
 
   const formatProblemTitle = (slug) => {
@@ -71,18 +74,40 @@ const SubmissionsList = () => {
   };
 
   const formatPerformance = (submission) => {
-    const time = submission?.timeTaken ? `${submission.timeTaken}ms` : null;
-    const memory = submission?.memoryUsed ? `${submission.memoryUsed}KB` : null;
+    const time = submission?.executionTime;
+    const memory = submission?.memoryUsed;
 
-    if (time && memory) return `${time} • ${memory}`;
-    if (time) return time;
-    if (memory) return memory;
+    let timeStr = null;
+    let memoryStr = null;
+
+    if (time !== null && time !== undefined && time >= 0) {
+      if (time > 1000) {
+        timeStr = `${(time / 1000).toFixed(2)}s`;
+      } else {
+        timeStr = `${time}ms`;
+      }
+    }
+
+    if (memory !== null && memory !== undefined && memory > 0) {
+      if (memory > 1024) {
+        memoryStr = `${(memory / 1024).toFixed(2)}GB`;
+      } else if (memory >= 1) {
+        memoryStr = `${memory.toFixed(2)}MB`;
+      } else {
+        memoryStr = `${memory}KB`;
+      }
+    }
+
+    if (timeStr && memoryStr) return `${timeStr} • ${memoryStr}`;
+    if (timeStr) return timeStr;
+    if (memoryStr) return memoryStr;
     return 'N/A';
   };
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'Unknown';
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Unknown';
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
     
@@ -191,12 +216,12 @@ const SubmissionsList = () => {
 
                   return (
                   <tr
-                    key={submission.id}
+                    key={submission._id}
                     className="submissions-row"
-                    onClick={() => navigate(`/submissions/${submission.id}`)}
+                    onClick={() => navigate(`/submissions/${submission._id}`)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
-                        navigate(`/submissions/${submission.id}`);
+                        navigate(`/submissions/${submission._id}`);
                       }
                     }}
                     tabIndex={0}
@@ -204,20 +229,20 @@ const SubmissionsList = () => {
                   >
                     <td>
                       <span className={`submission-status-badge ${status.variant}`}>
-                        {status.label}
+                        <span style={{ marginRight: '0.25rem' }}>{status.icon}</span>{status.label}
                       </span>
                     </td>
                     <td>
                       <div className="submission-problem-title">
-                        {formatProblemTitle(submission.questionSlug)}
+                        {formatProblemTitle(submission.problemSlug)}
                       </div>
                       <div className="submission-problem-meta">
-                        {submission.output ? `${submission.output.passed}/${submission.output.total} tests passed` : 'No test results'}
+                        {submission.totalTestcases ? `${submission.passedTestcases}/${submission.totalTestcases} tests passed` : 'No test results'}
                       </div>
                     </td>
                     <td>
                       <div className="submission-lang">
-                        {submission.language || 'Unknown'}
+                        {submission.language ? submission.language.toUpperCase() : 'Unknown'}
                       </div>
                     </td>
                     <td>
@@ -227,7 +252,7 @@ const SubmissionsList = () => {
                     </td>
                     <td>
                       <div className="submission-date">
-                        {formatDate(submission.created)}
+                        {formatDate(submission.createdAt)}
                       </div>
                     </td>
                   </tr>

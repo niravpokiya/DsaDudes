@@ -4,7 +4,7 @@ const getSubmissions = async (userId) => {
     const token = localStorage.getItem("token");
     if (!token) return null;
 
-    const res = await fetch(`http://localhost:8080/api/submissions/?userId=${userId}`, {
+    const res = await fetch(`http://localhost:8080/api/submissions/all-submissions/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -25,6 +25,7 @@ const getSubmissions = async (userId) => {
     if (!text) return []; // empty body → return empty array
 
     const data = JSON.parse(text);
+    console.log("✅ Submissions fetched:", data);
     return data;
   } catch (err) {
     console.error("❌ Error fetching submissions:", err);
@@ -37,7 +38,7 @@ const getSubmissionById = async (userId, submissionId) => {
     const token = localStorage.getItem("token");
     if (!token) return null;
 
-    const res = await fetch(`http://localhost:8080/api/submissions/get?submissionId=${submissionId}`, {
+    const res = await fetch(`http://localhost:8080/api/submissions/${submissionId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -58,6 +59,7 @@ const getSubmissionById = async (userId, submissionId) => {
     if (!text) return null;
 
     const data = JSON.parse(text);
+    console.log("✅ Submission fetched:", data);
     return data;
   } catch (err) {
     console.error("❌ Error fetching submission:", err);
@@ -65,4 +67,5 @@ const getSubmissionById = async (userId, submissionId) => {
   }
 };
 
-export { getSubmissions, getSubmissionById };
+export { getSubmissionById, getSubmissions };
+

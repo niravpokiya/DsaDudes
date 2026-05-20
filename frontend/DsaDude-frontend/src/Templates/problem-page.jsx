@@ -17,7 +17,9 @@ export default function ProblemsPage() {
   const [sampleOutputs, setSampleOutputs] = useState([]);
   const [_outputMatch, _setOutputMatch] = useState(2);
   const [editorHeight, setEditorHeight] = useState(400); // for resizable dragger...
+  const [sidebarWidth, setSidebarWidth] = useState(350); // for vertical resizable divider
   const isResizing = useRef(false);
+  const isVerticalResizing = useRef(false);
   const [gotCorrectOutput, setGotCorrectOutput] = useState([]);
   const [showFullError, setShowFullError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +40,10 @@ export default function ProblemsPage() {
     }
 
     return {
-      id: submission.id || submission.submissionId || `${Date.now()}-${Math.random()}`,
+      id:
+        submission.id ||
+        submission.submissionId ||
+        `${Date.now()}-${Math.random()}`,
       userId: submission.userId,
       questionId: submission.questionId,
       problemSlug: submission.problemSlug,
@@ -47,13 +52,19 @@ export default function ProblemsPage() {
       codeLength: submission.codeLength,
       verdict: submission.verdict || "UNKNOWN",
       status: submission.status || "UNKNOWN",
-      executionTime: submission.executionTime ?? submission.executionTimeMs ?? submission.time,
+      executionTime:
+        submission.executionTime ??
+        submission.executionTimeMs ??
+        submission.time,
       memoryUsed: submission.memoryUsed,
       totalTestcases: submission.totalTestcases ?? submission.total ?? 0,
       passedTestcases: submission.passedTestcases ?? submission.passed ?? 0,
       failedTestcases: submission.failedTestcases,
       errorMessage: submission.errorMessage || submission.error || "",
-      submissionTime: submission.submissionTime || submission.timestamp || new Date().toISOString(),
+      submissionTime:
+        submission.submissionTime ||
+        submission.timestamp ||
+        new Date().toISOString(),
     };
   };
 
@@ -92,7 +103,12 @@ export default function ProblemsPage() {
 
   useEffect(() => {
     const loadSubmissions = async () => {
-      if (activeTab !== "submissions" || !user?.id || hasLoadedSubmissions || loadingSubmissions) {
+      if (
+        activeTab !== "submissions" ||
+        !user?.id ||
+        hasLoadedSubmissions ||
+        loadingSubmissions
+      ) {
         return;
       }
 
@@ -107,13 +123,16 @@ export default function ProblemsPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:8080/api/submissions/all-submissions/${user.id}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `http://localhost:8080/api/submissions/all-submissions/${user.id}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        });
+        );
 
         if (!response.ok) {
           console.error("Failed to fetch submissions", response.status);
@@ -126,12 +145,18 @@ export default function ProblemsPage() {
         const payload = text ? JSON.parse(text) : [];
         const list = Array.isArray(payload)
           ? payload
-          : (Array.isArray(payload?.data) ? payload.data : []);
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
 
         const filtered = list
           .map(mapSubmissionRecord)
           .filter((entry) => entry && entry.problemSlug === slug)
-          .sort((a, b) => new Date(b.submissionTime).getTime() - new Date(a.submissionTime).getTime());
+          .sort(
+            (a, b) =>
+              new Date(b.submissionTime).getTime() -
+              new Date(a.submissionTime).getTime(),
+          );
 
         setSubmissions(filtered);
         setHasLoadedSubmissions(true);
@@ -170,6 +195,27 @@ export default function ProblemsPage() {
     };
   }, []);
 
+  // Vertical resizing for sidebar width
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isVerticalResizing.current) return;
+      const newWidth = Math.max(280, Math.min(600, e.clientX)); // min 280px, max 600px
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      isVerticalResizing.current = false;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   // reset error expand state when switching tests
   useEffect(() => {
     setShowFullError(false);
@@ -193,14 +239,15 @@ export default function ProblemsPage() {
           input,
           slug,
           user ? user.id : null,
-        );
-
+        ); 
         outputs.push(data);
 
         // Compare output with flexible normalization
         const expected = problem.examples[i].output;
         const actual = data.output || "";
-
+        console.log(
+          `Test case ${i + 1} - Expected: "${expected}", Actual: "${actual}"`,
+        );
         if (expected === actual) {
           results.push(1);
         } else if (problem.staticSolution) {
@@ -213,7 +260,6 @@ export default function ProblemsPage() {
             slug,
             user ? user.id : null,
           );
-
           results.push(verdict ? 1 : 0);
         }
       } catch (err) {
@@ -228,10 +274,7 @@ export default function ProblemsPage() {
       }
     }
 
-    console.log("🔴 Final results:");
-    console.log("Outputs:", outputs);
     console.log("Results:", results);
-    console.log("Setting sample outputs and results...");
 
     setSampleOutputs(outputs);
     setGotCorrectOutput(results);
@@ -271,8 +314,19 @@ export default function ProblemsPage() {
     try {
       // Submit with real-time status updates
       const res = await SubmitCode(code, language, slug, user.id, (update) => {
-        const nextStatus = (update?.status || update?.verdict || "").toString().toUpperCase();
-        const phase = nextStatus === "RUNNING" || nextStatus === "PENDING" || nextStatus === "QUEUED" ? "running" : nextStatus === "COMPLETED" || nextStatus === "SUCCESS" || update?.completed ? "final" : "running";
+        const nextStatus = (update?.status || update?.verdict || "")
+          .toString()
+          .toUpperCase();
+        const phase =
+          nextStatus === "RUNNING" ||
+          nextStatus === "PENDING" ||
+          nextStatus === "QUEUED"
+            ? "running"
+            : nextStatus === "COMPLETED" ||
+                nextStatus === "SUCCESS" ||
+                update?.completed
+              ? "final"
+              : "running";
 
         setSubmissionState((current) => ({
           ...(current || {}),
@@ -281,8 +335,15 @@ export default function ProblemsPage() {
           status: update?.status || current?.status || "RUNNING",
           verdict: update?.verdict || current?.verdict || "RUNNING",
           passed: Number(update?.passed ?? current?.passed ?? 0),
-          total: Number(update?.total ?? current?.total ?? (problem?.examples?.length || 0)),
-          executionTimeMs: Number(update?.executionTimeMs ?? update?.executionTime ?? current?.executionTimeMs ?? 0),
+          total: Number(
+            update?.total ?? current?.total ?? (problem?.examples?.length || 0),
+          ),
+          executionTimeMs: Number(
+            update?.executionTimeMs ??
+              update?.executionTime ??
+              current?.executionTimeMs ??
+              0,
+          ),
           language: update?.language || current?.language || language,
           error: update?.error ?? current?.error ?? "",
           message: update?.message || current?.message || "",
@@ -382,13 +443,13 @@ export default function ProblemsPage() {
       };
 
       setSubmissionResult(errorSubmission);
-        setSubmissionState({
-          phase: "final",
-          ...errorSubmission,
-          executionTimeMs: 0,
-          sourceCode: code,
-          code,
-        });
+      setSubmissionState({
+        phase: "final",
+        ...errorSubmission,
+        executionTimeMs: 0,
+        sourceCode: code,
+        code,
+      });
       setHasLoadedSubmissions(false);
     } finally {
       setSubmitting(false);
@@ -450,10 +511,31 @@ export default function ProblemsPage() {
   return (
     <div
       className="flex h-screen overflow-hidden"
-      style={{ background: "var(--bg-primary)" }}
+      style={{
+        background: "var(--bg-primary)",
+        width: "100%",
+        margin: 0,
+        padding: 0,
+      }}
     >
-      <div className="page-inner" style={{ width: "100%", height: "100%" }}>
-        <div className="flex gap-4 h-full" style={{ alignItems: "stretch", minWidth: 0, flexWrap: "nowrap" }}>
+      <div
+        className="page-inner"
+        style={{
+          width: "100vw",
+          height: "90vh",
+          borderRadius: "var(--radius-lg)",
+          overflow: "scroll",
+        }}
+      >
+        <div
+          className="flex h-full"
+          style={{
+            alignItems: "stretch",
+            minWidth: 0,
+            flexWrap: "nowrap",
+            gap: 0,
+          }}
+        >
           <ProblemSidebar
             problem={problem}
             activeTab={activeTab}
@@ -476,6 +558,31 @@ export default function ProblemsPage() {
             setLanguage={setLanguage}
             getDifficultyColor={getDifficultyColor}
             setSubmissionResult={setSubmissionResult}
+            sidebarWidth={sidebarWidth}
+          />
+
+          {/* Vertical Divider */}
+          <div
+            onMouseDown={() => {
+              isVerticalResizing.current = true;
+            }}
+            style={{
+              width: "4px",
+              background: "var(--border-primary)",
+              cursor: "col-resize",
+              transition: isVerticalResizing.current
+                ? "none"
+                : "background 0.2s",
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--text-accent)";
+            }}
+            onMouseLeave={(e) => {
+              if (!isVerticalResizing.current) {
+                e.currentTarget.style.background = "var(--border-primary)";
+              }
+            }}
           />
 
           <EditorArea

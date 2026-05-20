@@ -97,7 +97,7 @@ const ProfileHeatmap = ({ userId }) => {
 
         // data already looks like:
         // { "2026-03-01": 3, "2026-03-02": 5 }
-
+        console.log("Heatmap data", data);
         setActivityByDate(data);
       } catch (err) {
         console.error("Heatmap fetch failed", err);

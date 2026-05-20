@@ -1,8 +1,8 @@
+import { Editor } from '@monaco-editor/react';
 import { useContext, useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../Context/userContext';
 import { getSubmissionById } from '../Helpers/getSubmissions';
-import { Editor } from '@monaco-editor/react';
 import './submissionDetail.css';
 
 const SubmissionDetail = () => {
@@ -40,33 +40,37 @@ const SubmissionDetail = () => {
   }, [user, submissionId]);
 
   const getStatusBadgeClass = (submission) => {
-    if (submission.error || submission.exitCode !== 0) return 'sd-badge-error';
-    if (submission.output?.failed > 0) return 'sd-badge-wrong';
-    if (submission.output?.passed === submission.output?.total && submission.output?.total > 0)
-      return 'sd-badge-accepted';
+    if (submission.verdict === 'ACCEPTED') return 'sd-badge-accepted';
+    if (submission.verdict === 'WRONG_ANSWER') return 'sd-badge-wrong';
+    if (submission.verdict === 'TIME_LIMIT_EXCEEDED') return 'sd-badge-error';
+    if (submission.verdict === 'RUNTIME_ERROR') return 'sd-badge-error';
+    if (submission.errorMessage) return 'sd-badge-error';
     return 'sd-badge-pending';
   };
 
   const getStatusText = (submission) => {
-    // Check for compilation errors
-    if (submission.error || submission.exitCode !== 0) {
-      return 'Compilation Error';
-    }
-    // Check if there are any failed test cases
-    if (submission.output?.failed > 0) {
-      return 'Wrong Answer';
-    }
-    // Check if all test cases passed
-    if (submission.output?.passed === submission.output?.total && submission.output?.total > 0) {
-      return 'Accepted';
-    }
-    // Default status
-    return 'Unknown';
+    if (submission.verdict === 'ACCEPTED') return 'Accepted';
+    if (submission.verdict === 'WRONG_ANSWER') return 'Wrong Answer';
+    if (submission.verdict === 'TIME_LIMIT_EXCEEDED') return 'Time Limit Exceeded';
+    if (submission.verdict === 'RUNTIME_ERROR') return 'Runtime Error';
+    if (submission.errorMessage) return 'Compilation Error';
+    return submission.verdict || 'Unknown';
+  };
+
+  const getVerdictColor = (verdict) => {
+    const colors = {
+      'ACCEPTED': '#10b981',
+      'WRONG_ANSWER': '#ef4444',
+      'TIME_LIMIT_EXCEEDED': '#f97316',
+      'RUNTIME_ERROR': '#ef4444',
+    };
+    return colors[verdict] || '#6b7280';
   };
 
   const formatDate = (timestamp) => {
-    if (!timestamp) return 'Unknown';
+    if (!timestamp) return 'N/A';
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return 'N/A';
     return date.toLocaleString('en-US', { 
       month: 'short', 
       day: 'numeric', 
@@ -74,6 +78,19 @@ const SubmissionDetail = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatMemory = (memory) => {
+    if (!memory || memory === 0) return 'N/A';
+    if (memory > 1024) return `${(memory / 1024).toFixed(2)} GB`;
+    if (memory > 1) return `${memory.toFixed(2)} MB`;
+    return `${memory} KB`;
+  };
+
+  const formatExecutionTime = (time) => {
+    if (!time && time !== 0) return 'N/A';
+    if (time > 1000) return `${(time / 1000).toFixed(2)}s`;
+    return `${time}ms`;
   };
 
   const getLanguageMonaco = (language) => {
@@ -136,7 +153,7 @@ const SubmissionDetail = () => {
     );
   }
 
-  const codeLines = submission.code ? submission.code.split('\n') : [];
+  const codeLines = submission.sourceCode ? submission.sourceCode.split('\n') : [];
   const displayLines = showFullCode ? codeLines : codeLines.slice(0, 50);
 
   return (
@@ -148,7 +165,7 @@ const SubmissionDetail = () => {
           <div>
             <Link to="/submissions" className="sd-back-link">← Back to Submissions</Link>
             <h1 className="sd-title">
-              {submission.questionSlug ? submission.questionSlug.replace(/-/g, ' ') : 'Unknown Problem'}
+              {submission.problemSlug ? submission.problemSlug.replace(/-/g, ' ') : 'Unknown Problem'}
             </h1>
           </div>
           <span className={`sd-status-badge ${getStatusBadgeClass(submission)}`}>
@@ -162,68 +179,91 @@ const SubmissionDetail = () => {
           <div className="sd-stats-grid">
             <div className="sd-stat-box">
               <div className="sd-stat-label">Language</div>
-              <div className="sd-stat-value">{submission.language || 'Unknown'}</div>
+              <div className="sd-stat-value">{submission.language ? submission.language.toUpperCase() : 'Unknown'}</div>
             </div>
             <div className="sd-stat-box">
               <div className="sd-stat-label">Runtime</div>
-              <div className="sd-stat-value">{submission.timeTaken ? `${submission.timeTaken}ms` : 'N/A'}</div>
+              <div className="sd-stat-value">{formatExecutionTime(submission.executionTime)}</div>
             </div>
             <div className="sd-stat-box">
-              <div className="sd-stat-label">Memory</div>
-              <div className="sd-stat-value">{submission.memoryUsed ? `${submission.memoryUsed}KB` : 'N/A'}</div>
+              <div className="sd-stat-label">Memory Used</div>
+              <div className="sd-stat-value">{formatMemory(submission.memoryUsed)}</div>
             </div>
             <div className="sd-stat-box">
-              <div className="sd-stat-label">Submitted</div>
-              <div className="sd-stat-value" style={{ textTransform: 'none', fontSize: '0.82rem' }}>
-                {formatDate(submission.created)}
-              </div>
+              <div className="sd-stat-label">Code Length</div>
+              <div className="sd-stat-value">{submission.codeLength ? `${submission.codeLength} chars` : `${submission.sourceCode?.length || 0} chars`}</div>
             </div>
           </div>
 
-          {submission.output && (
+          {submission.totalTestcases !== undefined && (
             <>
               <h3 className="sd-section-title">Test Results</h3>
               <div className="sd-results-grid">
                 <div className="sd-result-box passed">
-                  <div className="sd-result-label">PASSED</div>
-                  <div className="sd-result-value">{submission.output.passed}</div>
+                  <div className="sd-result-label">✓ PASSED</div>
+                  <div className="sd-result-value">{submission.passedTestcases || 0}</div>
                 </div>
                 <div className="sd-result-box failed">
-                  <div className="sd-result-label">FAILED</div>
-                  <div className="sd-result-value">{submission.output.failed}</div>
+                  <div className="sd-result-label">✗ FAILED</div>
+                  <div className="sd-result-value">{submission.failedTestcases || 0}</div>
                 </div>
                 <div className="sd-result-box total">
                   <div className="sd-result-label">TOTAL</div>
-                  <div className="sd-result-value">{submission.output.total}</div>
+                  <div className="sd-result-value">{submission.totalTestcases}</div>
                 </div>
               </div>
-              {submission.output.message && (
-                <div className="sd-message-box">{submission.output.message}</div>
+              {submission.passedTestcases > 0 && submission.totalTestcases > 0 && (
+                <div style={{ marginTop: '1.5rem' }}>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Success Rate</div>
+                  <div style={{ height: '0.5rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '0.25rem', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${(submission.passedTestcases / submission.totalTestcases) * 100}%`,
+                      height: '100%',
+                      backgroundColor: getVerdictColor(submission.verdict),
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                    {((submission.passedTestcases / submission.totalTestcases) * 100).toFixed(1)}% passed
+                  </div>
+                </div>
               )}
             </>
           )}
 
-          {submission.error && (
+          {submission.errorMessage && submission.errorMessage.trim() && (
             <>
-              <h3 className="sd-section-title">Error Details</h3>
+              <h3 className="sd-section-title">⚠️ Error Details</h3>
               <div className="sd-error-box">
-                <div>{submission.error}</div>
-                <div style={{ marginTop: '0.35rem', fontWeight: 600 }}>Exit Code: {submission.exitCode}</div>
+                <code style={{ fontSize: '0.85rem', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {submission.errorMessage}
+                </code>
               </div>
             </>
+          )}
+
+          {submission.status && (
+            <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '0.375rem', fontSize: '0.875rem' }}>
+              <strong>Status:</strong> <span style={{ textTransform: 'capitalize' }}>{submission.status.toLowerCase()}</span>
+            </div>
           )}
         </div>
 
         {/* Solution Code */}
         <div className="sd-code-card">
           <div className="sd-code-header">
-            <h2 className="sd-code-title">Solution Code</h2>
+            <div>
+              <h2 className="sd-code-title">Solution Code</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                {codeLines.length} {codeLines.length === 1 ? 'line' : 'lines'} • {submission.language?.toUpperCase() || 'Unknown'}
+              </p>
+            </div>
           </div>
           <div className="sd-code-body">
             <Editor
               height="400px"
               language={getLanguageMonaco(submission.language)}
-              value={submission.code || ''}
+              value={submission.sourceCode || ''}
               theme="vs-dark"
               options={{
                 readOnly: true,
@@ -248,7 +288,7 @@ const SubmissionDetail = () => {
 
         {/* Actions */}
         <div className="sd-actions">
-          <Link to={`/problems/${submission.questionSlug}`} className="sd-btn-primary">
+          <Link to={`/problems/${submission.problemSlug}`} className="sd-btn-primary">
             Solve Again
           </Link>
           <Link to="/submissions" className="sd-btn-secondary">

@@ -18,11 +18,12 @@ export default function ProblemSidebar({
   setLanguage,
   getDifficultyColor,
   setSubmissionResult,
+  sidebarWidth = 350,
 }) {
   const resultTabMeta = getResultTabTitle(submissionState, submissionResult, submitting);
 
   return (
-    <div className="modern-scrollbar" style={{ flex: "0 0 420px", minWidth: "360px", maxWidth: "520px", height: "100%", overflowY: "auto", padding: "0 0", minHeight: 0 }}>
+    <div className="modern-scrollbar" style={{ flex: `0 0 ${sidebarWidth}px`, minWidth: "280px", maxWidth: "600px", height: "100%", overflowY: "auto", padding: "0 0", minHeight: 0 }}>
       <div className="card animate-fadeInLeft" style={{ height: "fit-content", padding: "1rem", minHeight: "100%" }}>
         <div style={{ marginBottom: "0.75rem" }}>
           <h2

@@ -380,13 +380,7 @@ function createSuccessResult(result, mappedStatus) {
   if (mappedStatus.status === "COMPLETED" && !finalVerdict && finalOutput) {
     finalVerdict = "SUCCESS"; // Default verdict for successful RUN
   }
-  
-  // If verdict looks like output (contains actual program output), treat it as output
-  if (finalVerdict && finalVerdict.length > 0 && !["ACCEPTED", "WRONG_ANSWER", "TIME_LIMIT_EXCEEDED", "RUNTIME_ERROR", "COMPILE_ERROR", "SYSTEM_ERROR", "SUCCESS", "ERROR", "PENDING"].includes(finalVerdict)) {
-    finalOutput = finalVerdict;
-    finalVerdict = "SUCCESS";
-  }
-  
+    
   return {
     output: finalOutput,
     error: result.error || "",
