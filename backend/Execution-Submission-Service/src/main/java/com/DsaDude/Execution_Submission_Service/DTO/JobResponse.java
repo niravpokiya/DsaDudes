@@ -1,4 +1,4 @@
-package com.CE.Execution_Submission_Service.DTO;
+package com.DsaDude.Execution_Submission_Service.DTO;
 
 public class JobResponse {
     private String jobId;

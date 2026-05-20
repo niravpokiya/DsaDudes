@@ -12,7 +12,7 @@
         <module name="Execution-Submission-Service" />
         <module name="service-registry" />
       </profile>
-      <profile name="Annotation profile for Code-Execution-Service" enabled="true">
+      <profile name="Annotation profile for User-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />

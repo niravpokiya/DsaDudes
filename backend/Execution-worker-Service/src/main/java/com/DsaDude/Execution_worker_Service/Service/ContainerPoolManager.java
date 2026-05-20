@@ -1,7 +1,7 @@
-package com.CE.Execution_worker_Service.Service;
+package com.DsaDude.Execution_worker_Service.Service;
 
-import com.CE.Execution_worker_Service.DTO.ExecutionJob;
-import com.CE.Execution_worker_Service.DTO.ExecutionResult;
+import com.DsaDude.Execution_worker_Service.DTO.ExecutionJob;
+import com.DsaDude.Execution_worker_Service.DTO.ExecutionResult;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +13,7 @@ import java.util.concurrent.*;
 @Component
 public class ContainerPoolManager {
 
-    private final int POOL_SIZE = 4;
+    private final int POOL_SIZE = 8;
     private final BlockingQueue<String> availableContainers =
             new LinkedBlockingQueue<>();
     private final ExecutorService executor =
@@ -89,8 +89,10 @@ public class ContainerPoolManager {
             String containerName,
             ExecutionJob job) throws Exception {
 
+
         Path tempDir = Files.createTempDirectory("exec-");
-        Path sourceFile = tempDir.resolve("main.cpp");
+        String sourceFileName = getSourceFileName(job.getLanguage());
+        Path sourceFile = tempDir.resolve(sourceFileName);
         Path inputFile = tempDir.resolve("input.txt");
 
         Files.writeString(sourceFile, job.getSourceCode());
@@ -102,7 +104,7 @@ public class ContainerPoolManager {
         // Copy files to /workspace inside container
         new ProcessBuilder("docker", "cp",
                 sourceFile.toString(),
-                containerName + ":/workspace/main.cpp")
+                containerName + ":/workspace/" + sourceFileName)
                 .start().waitFor();
 
         new ProcessBuilder("docker", "cp",
@@ -110,19 +112,14 @@ public class ContainerPoolManager {
                 containerName + ":/workspace/input.txt")
                 .start().waitFor();
 
+        String execCommand = buildExecutionCommand(job.getLanguage(), sourceFileName);
+
         // Execute inside container
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "exec",
                 containerName,
                 "bash", "-c",
-                "cd /workspace && " +
-                        "g++ main.cpp -o main 2> compile_error.txt; " +
-                        "if [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi; " +
-                        "timeout 2s ./main < input.txt > output.txt 2> runtime_error.txt; " +
-                        "EXIT_CODE=$?; " +
-                        "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
-                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
-                        "cat output.txt"
+                execCommand
         );
 
         Process process = pb.start();
@@ -147,7 +144,7 @@ public class ContainerPoolManager {
         new ProcessBuilder("docker", "exec",
                 containerName,
                 "bash", "-c",
-                "cd /workspace && rm -f main.cpp main input.txt output.txt compile_error.txt runtime_error.txt")
+                "cd /workspace && rm -f main.cpp main input.txt output.txt compile_error.txt runtime_error.txt execution_time.txt execution_status.txt")
                 .start().waitFor();
 
         // Cleanup host temp files
@@ -156,6 +153,67 @@ public class ContainerPoolManager {
         Files.deleteIfExists(tempDir);
         
         return mapResult(exitCode, output.toString(), duration);
+    }
+
+    private String getSourceFileName(String language) {
+        switch (language.toLowerCase()) {
+            case "cpp":
+            case "c++":
+                return "main.cpp";
+            case "java":
+                return "Main.java";
+            case "python":
+            case "py":
+                return "solution.py";
+            case "javascript":
+            case "js":
+                return "solution.js";
+            default:
+                return "main.cpp"; // default to C++
+        }
+    }
+
+    private String buildExecutionCommand(String language, String sourceFileName) {
+        switch (language.toLowerCase()) {
+            case "cpp":
+            case "c++":
+                return "cd /workspace && " +
+                        "g++ " + sourceFileName + " -o main 2> compile_error.txt; " +
+                        "if [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi; " +
+                        "timeout 2s ./main < input.txt > output.txt 2> runtime_error.txt; " +
+                        "EXIT_CODE=$?; " +
+                        "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
+                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
+                        "cat output.txt";
+            case "java":
+                return "cd /workspace && " +
+                        "javac " + sourceFileName + " 2> compile_error.txt; " +
+                        "if [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi; " +
+                        "timeout 2s java Main < input.txt > output.txt 2> runtime_error.txt; " +
+                        "EXIT_CODE=$?; " +
+                        "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
+                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
+                        "cat output.txt";
+            case "python":
+            case "py":
+                return "cd /workspace && " +
+                        "timeout 2s python3 " + sourceFileName + " < input.txt > output.txt 2> runtime_error.txt; " +
+                        "EXIT_CODE=$?; " +
+                        "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
+                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
+                        "cat output.txt";
+            case "javascript":
+            case "js":
+                return "cd /workspace && " +
+                        "timeout 2s node " + sourceFileName + " < input.txt > output.txt 2> runtime_error.txt; " +
+                        "EXIT_CODE=$?; " +
+                        "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
+                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
+                        "cat output.txt";
+            default:
+                return "cd /workspace && " +
+                        "echo 'Unsupported language: " + language + "'; exit 1";
+        }
     }
 
     private ExecutionResult mapResult(

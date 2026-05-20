@@ -1,4 +1,4 @@
-package com.CE.Execution_Submission_Service.DTO;
+package com.DsaDude.Execution_Submission_Service.DTO;
 
 
 import lombok.Data;
@@ -11,7 +11,7 @@ public class ExecutionJob {
     public String input;
     public String status;
     public String typeOfJob;
-    public String userId;
+    public int userId;
     public String problemSlug;
     public String questionId;
 }

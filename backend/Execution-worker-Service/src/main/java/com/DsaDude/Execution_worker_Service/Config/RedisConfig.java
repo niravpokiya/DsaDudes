@@ -1,4 +1,4 @@
-package com.CE.Execution_worker_Service.Config;
+package com.DsaDude.Execution_worker_Service.Config;
 
 
 import org.springframework.context.annotation.Bean;

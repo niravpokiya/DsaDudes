@@ -14,6 +14,7 @@ import java.util.Map;
 public class AuthController {
     @Autowired
     public UserService userService;
+
     @PostMapping("/register")
     public ResponseEntity<Map<String,Object>> register(@RequestBody UserDTO user) {
         return userService.registerUser(user);

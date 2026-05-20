@@ -1,4 +1,4 @@
-package com.CE.Execution_Submission_Service.Config;
+package com.DsaDude.Execution_Submission_Service.Config;
 
 
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package com.CE.Execution_Submission_Service;
+package com.DsaDude.Execution_Submission_Service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

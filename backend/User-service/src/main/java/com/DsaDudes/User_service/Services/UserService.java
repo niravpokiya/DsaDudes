@@ -52,21 +52,31 @@ public class UserService {
     }
 
     public ResponseEntity<Map<String, Object>> verify(UserDTO user) {
+
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        user.getUsername(),
+                        user.getPassword()
+                )
         );
 
         if (auth.isAuthenticated()) {
-            User existingUser = userRepository.findByUsername(user.getUsername());
-            String token = jwtService.generateJWTToken(user);
+
+            User existingUser =
+                    userRepository.findByUsername(user.getUsername());
+
+            String token =
+                    jwtService.generateToken(existingUser);
 
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("user", new UserDTO(existingUser));
+
             return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid credentials"));
         }
+
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "Invalid credentials"));
     }
 
     public User findUser() {

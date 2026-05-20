@@ -1,4 +1,4 @@
-package com.CE.Execution_worker_Service.DTO;
+package com.DsaDude.Execution_worker_Service.DTO;
 
 import lombok.Data;
 

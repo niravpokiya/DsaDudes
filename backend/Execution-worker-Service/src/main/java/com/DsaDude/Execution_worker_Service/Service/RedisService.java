@@ -1,4 +1,4 @@
-package com.CE.Execution_worker_Service.Service;
+package com.DsaDude.Execution_worker_Service.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -19,38 +19,166 @@ public class RedisService {
         return "exec:" + id;
     }
 
-    public void markPending(String id) {
-        redisTemplate.opsForHash().put(key(id), "status", "PENDING");
-        redisTemplate.expire(key(id), TTL, TimeUnit.MINUTES);
-    }
+    private void writeExecutionState(
+            String id,
+            String status,
+            String verdict,
+            String error,
+            long executionTime,
+            String sourceCode,
+            String language,
+            int passed,
+            int total,
+            String output
+    ) {
 
-    public void markRunning(String id) {
-        redisTemplate.opsForHash().put(key(id), "status", "RUNNING");
-        redisTemplate.expire(key(id), TTL, TimeUnit.MINUTES);
-    }
-
-    public void markCompleted(String id, String verdict, long executionTime) {
         String key = key(id);
 
-        redisTemplate.opsForHash().put(key, "status", "COMPLETED");
+        redisTemplate.opsForHash().put(key, "status", status);
         redisTemplate.opsForHash().put(key, "verdict", verdict);
-        redisTemplate.opsForHash().put(key, "executionTimeMs", String.valueOf(executionTime));
+        redisTemplate.opsForHash().put(key, "error", error);
 
-        redisTemplate.expire(key, TTL, TimeUnit.MINUTES);
+        redisTemplate.opsForHash().put(
+                key,
+                "executionTimeMs",
+                executionTime
+        );
+
+        redisTemplate.opsForHash().put(
+                key,
+                "sourceCode",
+                sourceCode
+        );
+
+        redisTemplate.opsForHash().put(
+                key,
+                "language",
+                language
+        );
+
+        redisTemplate.opsForHash().put(
+                key,
+                "passed",
+                passed
+        );
+
+        redisTemplate.opsForHash().put(
+                key,
+                "total",
+                total
+        );
+        redisTemplate.opsForHash().put(
+                key,
+                "output",
+                output
+        );
+
+        redisTemplate.expire(
+                key,
+                TTL,
+                TimeUnit.MINUTES
+        );
     }
 
-    public void markError(String id, String verdict, String errorMessage, long executionTime) {
+    public void markPending(
+            String id,
+            String sourceCode,
+            String language,
+            int passed,
+            int total
+    ) {
 
-        String key = key(id);
-
-        redisTemplate.opsForHash().put(key, "status", "COMPLETED");
-        redisTemplate.opsForHash().put(key, "verdict", verdict); // RE / TLE etc
-        redisTemplate.opsForHash().put(key, "error", errorMessage);
-        redisTemplate.opsForHash().put(key, "executionTimeMs", String.valueOf(executionTime));
-
-        redisTemplate.expire(key, TTL, TimeUnit.MINUTES);
+        writeExecutionState(
+                id,
+                "PENDING",
+                "PENDING",
+                "",
+                0,
+                sourceCode,
+                language,
+                passed,
+                total,
+                ""
+        );
     }
-    public Map<Object, Object> getExecution(String id) {
-        return redisTemplate.opsForHash().entries(key(id));
+
+    public void markRunning(
+            String id,
+            String sourceCode,
+            String language,
+            int passed,
+            int total
+    ) {
+
+        writeExecutionState(
+                id,
+                "RUNNING",
+                "RUNNING",
+                "",
+                0,
+                sourceCode,
+                language,
+                passed,
+                total,
+                ""
+        );
+    }
+
+    public void markCompleted(
+            String id,
+            String verdict,
+            long executionTime,
+            String sourceCode,
+            String language,
+            int passed,
+            int total,
+            String output
+    ) {
+
+        writeExecutionState(
+                id,
+                "COMPLETED",
+                verdict,
+                "",
+                executionTime,
+                sourceCode,
+                language,
+                passed,
+                total,
+                output
+        );
+    }
+
+    public void markError(
+            String id,
+            String verdict,
+            String errorMessage,
+            long executionTime,
+            String sourceCode,
+            String language,
+            int passed,
+            int total
+    ) {
+
+        writeExecutionState(
+                id,
+                "COMPLETED",
+                verdict,
+                errorMessage,
+                executionTime,
+                sourceCode,
+                language,
+                passed,
+                total,
+                ""
+        );
+    }
+
+    public Map<Object, Object> getExecution(
+            String id
+    ) {
+        return redisTemplate
+                .opsForHash()
+                .entries(key(id));
     }
 }

@@ -19,13 +19,12 @@ import java.io.IOException;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
     @Autowired
-    ApplicationContext applicationContext;
-
-    @Autowired
     private JWTService jwtService;
 
+    @Autowired
+    private CustomUserDetailsService customUserDetailsService;
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException, ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
         String token = null, username = null;
         if(authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -33,8 +32,8 @@ public class JwtFilter extends OncePerRequestFilter {
             username = jwtService.extractUsername(token);
         }
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userService = applicationContext.getBean(CustomUserDetailsService.class).loadUserByUsername(username);
-            if(jwtService.validateToken(token, userService)) {
+            UserDetails userService = customUserDetailsService.loadUserByUsername(username);
+            if(jwtService.isTokenValid(token, userService)) {
                 UsernamePasswordAuthenticationToken Authtoken = new UsernamePasswordAuthenticationToken(userService,
                                                             null, userService.getAuthorities());
                 Authtoken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
