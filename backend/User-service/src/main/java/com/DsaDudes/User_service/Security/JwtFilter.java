@@ -7,7 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,13 +28,18 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = null, username = null;
         if(authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
-            username = jwtService.extractUsername(token);
+            try {
+                username = jwtService.extractUsername(token);
+            } catch (Exception e) {
+                filterChain.doFilter(request, response);
+                return;
+            }
         }
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userService = customUserDetailsService.loadUserByUsername(username);
-            if(jwtService.isTokenValid(token, userService)) {
-                UsernamePasswordAuthenticationToken Authtoken = new UsernamePasswordAuthenticationToken(userService,
-                                                            null, userService.getAuthorities());
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+            if(jwtService.isTokenValid(token, userDetails)) {
+                UsernamePasswordAuthenticationToken Authtoken = new UsernamePasswordAuthenticationToken(userDetails,
+                                                            null, userDetails.getAuthorities());
                 Authtoken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(Authtoken);
             }

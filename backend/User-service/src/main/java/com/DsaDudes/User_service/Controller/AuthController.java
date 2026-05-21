@@ -1,6 +1,7 @@
 package com.DsaDudes.User_service.Controller;
 
 import com.DsaDudes.User_service.DTO.UserDTO;
+import com.DsaDudes.User_service.DTO.UserLoginRequest;
 import com.DsaDudes.User_service.Models.User;
 import com.DsaDudes.User_service.Services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +21,7 @@ public class AuthController {
         return userService.registerUser(user);
     }
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody UserDTO user) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody UserLoginRequest user) {
         return userService.verify(user);
-    }
-    @GetMapping("/get")
-    public User getUser() {
-        return userService.findUser();
     }
 }

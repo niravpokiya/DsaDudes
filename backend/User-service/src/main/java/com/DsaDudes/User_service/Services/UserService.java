@@ -1,6 +1,7 @@
 package com.DsaDudes.User_service.Services;
 
 import com.DsaDudes.User_service.DTO.UserDTO;
+import com.DsaDudes.User_service.DTO.UserLoginRequest;
 import com.DsaDudes.User_service.Enums.Role;
 import com.DsaDudes.User_service.Models.User;
 import com.DsaDudes.User_service.Repository.UserRepository;
@@ -27,6 +28,7 @@ public class UserService {
     private AuthenticationManager authenticationManager;
     @Autowired
     private JWTService jwtService;
+    //registering user (signup)
     public ResponseEntity<Map<String, Object>> registerUser(UserDTO user) {
         Map<String, Object> response = new HashMap<>();
 
@@ -51,41 +53,24 @@ public class UserService {
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<Map<String, Object>> verify(UserDTO user) {
-
+    public ResponseEntity<Map<String, Object>> verify(UserLoginRequest user) {
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getUsername(),
                         user.getPassword()
                 )
         );
-
         if (auth.isAuthenticated()) {
-
-            User existingUser =
-                    userRepository.findByUsername(user.getUsername());
-
-            String token =
-                    jwtService.generateToken(existingUser);
+            User existingUser = userRepository.findByUsername(user.getUsername());
+            String token = jwtService.generateToken(existingUser);
 
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("user", new UserDTO(existingUser));
-
             return ResponseEntity.ok(response);
         }
-
         return ResponseEntity.badRequest()
                 .body(Map.of("error", "Invalid credentials"));
-    }
-
-    public User findUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.isAuthenticated() == false || auth.getPrincipal() == null) {
-            return null;
-        }
-        String username = auth.getName();
-        return userRepository.findByUsername(username);
     }
 
     public User getUserFromToken(String token) {

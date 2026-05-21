@@ -23,14 +23,13 @@ public class JwtUtil {
 
     public boolean validateToken(String token) {
         try {
-            Claims claims = Jwts.parser()
+            Jwts.parser()
                     .verifyWith(getKey())
                     .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            return claims.getExpiration().after(new Date());
+                    .parseSignedClaims(token);
+            return true;
+
         } catch (Exception e) {
-            System.out.println("JWT validation failed: " + e.getMessage());
             return false;
         }
     }
@@ -42,5 +41,27 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload();
         return claims.getSubject();
+    }
+
+    public String extractRole(String token) {
+
+        Claims claims = Jwts.parser()
+                        .verifyWith(getKey())
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload();
+
+        return claims.get(
+                "role",
+                String.class
+        );
+    }
+    public Long extractUserId(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("userId", Long.class);
     }
 }

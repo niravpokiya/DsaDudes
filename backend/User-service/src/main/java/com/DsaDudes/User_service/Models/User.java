@@ -18,7 +18,6 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,6 +33,7 @@ public class User implements UserDetails {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+
     @Enumerated(EnumType.STRING)
     private AuthProvider provider;  // GOOGLE, GITHUB, LOCAL
 
@@ -43,6 +43,7 @@ public class User implements UserDetails {
     private Role role;
     private String profilePhoto;
     private String bio;
+
     // for saving current selected language in dropdown list at problem page...
      private String current_selected_language = "cpp";
 

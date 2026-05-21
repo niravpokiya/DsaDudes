@@ -1,20 +1,16 @@
 package com.DsaDudes.User_service.Services;
 
-import com.DsaDudes.User_service.DTO.UserDTO;
+import com.DsaDudes.User_service.Models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,11 +34,19 @@ public class JWTService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+    public String generateToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", user.getRole().name());
+        claims.put("userId", user.getId());
+        return buildToken(
+                claims,
+                user,
+                jwtExpiration
+        );
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
@@ -69,6 +73,12 @@ public class JWTService {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    private String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
+    }
+    private Long extractUserId(String token) {
+        return extractAllClaims(token).get("userId", Long.class);
+    }
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(getSignInKey())

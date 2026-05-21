@@ -1,33 +1,44 @@
 package com.DsaDude.api_gateway.Config;
 
-import com.DsaDude.api_gateway.Auth.JwtFilter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
-import java.util.Collections;
 
 @Configuration
 public class GatewayConfig {
-
+    // configuring custom routes...
     @Bean
-    public RouteLocator customRoutes(RouteLocatorBuilder builder, JwtFilter jwtFilter) {
+    public RouteLocator customRoutes(
+            RouteLocatorBuilder builder
+    ) {
+
         return builder.routes()
+
+                // User Service
+                .route("user-service", r -> r
+                        .path("/api/user/**")
+                        .uri("http://localhost:8084"))
+
+                .route("auth-service", r -> r
+                        .path("/api/auth/**")
+                        .uri("http://localhost:8084"))
+
                 // Question Service
-                .route("User-service", r -> r.path("/api/user/**").uri("http://localhost:8084"))
-                .route("User-service", r -> r.path("/api/auth/**").uri("http://localhost:8084"))
-                .route("Question-service", r -> r.path("/api/question/**")
+                .route("question-service", r -> r
+                        .path("/api/question/**")
                         .uri("http://localhost:8081"))
-                .route("Execution-worker-service", r -> r.path("/api/submissions/**")
-                        .filters(f -> f.filter(jwtFilter))
+
+                // Submission Service
+                .route("submission-service", r -> r
+                        .path("/api/submissions/**")
                         .uri("http://localhost:8092"))
-                .route("Execution-worker-service", r -> r.path("/api/code/**")
-                        .filters(f -> f.filter(jwtFilter))
+
+                // Code Execution
+                .route("execution-service", r -> r
+                        .path("/api/code/**")
                         .uri("http://localhost:8092"))
+
                 .build();
     }
 }
