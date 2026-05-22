@@ -5,13 +5,12 @@ import com.DsaDudes.User_service.DTO.UserLoginRequest;
 import com.DsaDudes.User_service.Enums.Role;
 import com.DsaDudes.User_service.Models.User;
 import com.DsaDudes.User_service.Repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,15 +19,12 @@ import java.util.Map;
 
 @Service
 public class UserService {
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private JWTService jwtService;
-    //registering user (signup)
+
+    @Autowired private UserRepository userRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private AuthenticationManager authenticationManager;
+    @Autowired private JWTService jwtService;
+
     public ResponseEntity<Map<String, Object>> registerUser(UserDTO user) {
         Map<String, Object> response = new HashMap<>();
 
@@ -55,11 +51,9 @@ public class UserService {
 
     public ResponseEntity<Map<String, Object>> verify(UserLoginRequest user) {
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        user.getUsername(),
-                        user.getPassword()
-                )
+                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
         );
+
         if (auth.isAuthenticated()) {
             User existingUser = userRepository.findByUsername(user.getUsername());
             String token = jwtService.generateToken(existingUser);
@@ -67,10 +61,11 @@ public class UserService {
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("user", new UserDTO(existingUser));
+
             return ResponseEntity.ok(response);
         }
-        return ResponseEntity.badRequest()
-                .body(Map.of("error", "Invalid credentials"));
+
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid credentials"));
     }
 
     public User getUserFromToken(String token) {
@@ -78,8 +73,46 @@ public class UserService {
             String username = jwtService.extractUsername(token);
             return userRepository.findByUsername(username);
         } catch (Exception e) {
-            return null; // invalid token
+            return null;
         }
     }
 
+    // Getting user stats -----------------------------------
+    public Map<String, Integer> getUserStats(String token) {
+        User user = getUserFromToken(token);
+        if (user == null) {
+            throw new RuntimeException("Invalid token");
+        }
+
+        return Map.of(
+                "totalSubmissions", user.getTotalSubmissions(),
+                "totalSolved", user.getSolvedCount(),
+                "easySolved", user.getEasySolvedCount(),
+                "mediumSolved", user.getMediumSolvedCount(),
+                "hardSolved", user.getHardSolvedCount()
+        );
+    }
+
+    @Transactional
+    public void incrementSubmissionCount(int userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setTotalSubmissions(user.getTotalSubmissions() + 1);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void incrementSolvedCount(int userId, String difficulty) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setSolvedCount(user.getSolvedCount() + 1);
+
+        switch (difficulty.toUpperCase()) {
+            case "EASY" -> user.setEasySolvedCount(user.getEasySolvedCount() + 1);
+            case "MEDIUM" -> user.setMediumSolvedCount(user.getMediumSolvedCount() + 1);
+            case "HARD" -> user.setHardSolvedCount(user.getHardSolvedCount() + 1);
+        }
+        userRepository.save(user);
+    }
 }

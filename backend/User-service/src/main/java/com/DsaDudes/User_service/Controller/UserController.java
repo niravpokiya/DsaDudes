@@ -6,10 +6,9 @@ import com.DsaDudes.User_service.Repository.UserRepository;
 import com.DsaDudes.User_service.Services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -34,4 +33,45 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    // Getting User stats ===================
+    @GetMapping("/stats")
+    public ResponseEntity<?> getUserStats(@RequestHeader("Authorization") String token) {
+        if (!token.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Token Invalid..!"));
+        }
+
+        String cleanToken = token.substring(7);
+        return ResponseEntity.ok(userService.getUserStats(cleanToken));
+    }
+
+    // Increment submission count ================
+    @PutMapping("/{userId}/increment-submissions")
+    public ResponseEntity<?> incrementSubmissions(@PathVariable int userId) {
+        try {
+            userService.incrementSubmissionCount(userId);
+            return ResponseEntity.ok(Map.of("message", "Submission count incremented successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Increment solved count by difficulty ================
+    @PutMapping("/{userId}/increment-solved")
+    public ResponseEntity<?> incrementSolved(
+            @PathVariable int userId,
+            @RequestParam String difficulty
+    ) {
+        try {
+            // Validating early so we don't hit the DB for garbage data
+            String upperDiff = difficulty.toUpperCase();
+            if (!upperDiff.equals("EASY") && !upperDiff.equals("MEDIUM") && !upperDiff.equals("HARD")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid difficulty. Use EASY, MEDIUM, or HARD"));
+            }
+
+            userService.incrementSolvedCount(userId, upperDiff);
+            return ResponseEntity.ok(Map.of("message", upperDiff + " solved count incremented successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

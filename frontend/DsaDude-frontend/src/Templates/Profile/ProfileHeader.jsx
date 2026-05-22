@@ -3,31 +3,34 @@ import React from 'react';
 const ProfileHeader = ({ user }) => {
   const displayName = user?.firstName || user?.username || 'Anonymous Coder';
   const handleEdit = () => {
-    // Placeholder click handler
     alert('Edit Profile coming soon');
   };
 
   return (
-    <div className="card flex items-center gap-4">
-      <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold"
-           style={{ background: 'var(--bg-accent)', color: 'var(--text-primary)' }}>
+    <div className="flex items-center gap-5 p-2">
+      <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border border-zinc-700/50 shadow-inner"
+           style={{ background: 'linear-gradient(135deg, #2b2b3c, #1e1e2e)', color: '#ffb020' }}>
         {displayName?.charAt(0)?.toUpperCase() || 'U'}
       </div>
+      
       <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-semibold">{displayName}</h2>
-          <span className="px-2 py-0.5 text-xs rounded border" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}>
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-100">{displayName}</h2>
+          <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-md border bg-zinc-800/40 border-zinc-700 text-zinc-400">
             {user?.role || 'USER'}
           </span>
         </div>
-        <p className="text-secondary">@{user?.username || 'username'}</p>
+        <p className="text-zinc-400 text-sm mt-0.5">@{user?.username || 'username'}</p>
       </div>
-      <button className="btn-secondary" onClick={handleEdit}>Edit Profile</button>
+      
+      <button 
+        className="px-4 py-2 text-sm font-medium rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition duration-150" 
+        onClick={handleEdit}
+      >
+        Edit Profile
+      </button>
     </div>
   );
 };
 
 export default ProfileHeader;
-
-
-

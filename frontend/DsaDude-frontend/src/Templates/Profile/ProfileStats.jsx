@@ -1,28 +1,22 @@
 import React from 'react';
 
 const Stat = ({ label, value }) => (
-  <div className="p-4 rounded border" style={{ borderColor: 'var(--border-secondary)', background: 'var(--bg-tertiary)' }}>
-    <div className="text-2xl font-bold">{value}</div>
-    <div className="text-secondary text-sm">{label}</div>
+  <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/30 flex flex-col justify-center">
+    <div className="text-2xl font-extrabold text-zinc-100 tracking-tight">{value}</div>
+    <div className="text-zinc-400 text-xs font-medium mt-1 uppercase tracking-wider">{label}</div>
   </div>
 );
 
 const ProfileStats = ({ user }) => {
-  // Placeholders where no data yet
   const solved = user?.solvedCount ?? 0;
   const submissionsPastYear = user?.submissionsPastYear ?? 0;
-  const badges = user?.badges?.length ?? 0;
 
   return (
-    <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+    <div className="grid grid-cols-2 gap-4">
       <Stat label="Solved" value={solved} />
-      <Stat label="Submissions (1y)" value={submissionsPastYear} />
-      <Stat label="Badges" value={badges} />
+      <Stat label="Submissions (1y)" value={submissionsPastYear} /> 
     </div>
   );
 };
 
 export default ProfileStats;
-
-
-

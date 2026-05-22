@@ -1,8 +1,11 @@
 import { api } from "../utils/api";
-
+import { increment_submission_count } from "../utils/submission-apis";
  
 async function SubmitCode(code, language, problemSlug, userId = null, onStatusUpdate = null) {
+  // increment submission count 
+  await increment_submission_count(userId).catch(err => console.error("Error incrementing submission count:", err));
 
+  // moving forward 
   try {
     const response = await api.post(
       "/code/submit",

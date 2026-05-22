@@ -37,18 +37,24 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private AuthProvider provider;  // GOOGLE, GITHUB, LOCAL
 
-    private String providerId;      // ID from Google/GitHub if OAuth2
+    private String providerId;      // D from Google/GitHub if OAuth2I
 
     @Enumerated(EnumType.STRING)
     private Role role;
     private String profilePhoto;
     private String bio;
 
-    // for saving current selected language in dropdown list at problem page...
-     private String current_selected_language = "cpp";
+    private int totalSubmissions;
+    private int solvedCount;
+    private int easySolvedCount;
+    private int mediumSolvedCount;
+    private int hardSolvedCount;
 
+    // for saving current selected language in dropdown list at problem page...
+    private String current_selected_language = "cpp";
     @PrePersist
     protected void onCreate() {
+        easySolvedCount = mediumSolvedCount = hardSolvedCount = solvedCount = totalSubmissions = 0;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }

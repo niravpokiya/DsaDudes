@@ -20,12 +20,12 @@ public class SubmissionController {
 
     // getting all submissions done by perticular user...
     @GetMapping("/all-submissions/{userId}")
-    public List<Submission> getAllSubmissionsDoneByUser(@PathVariable String userId) {
+    public List<Submission> getAllSubmissionsDoneByUser(@PathVariable int userId) {
         return submissionService.getUserSubmissions(userId);
     }
 
     @GetMapping("/{userId}/count")
-    public int getSubmissionsCountByUser(@PathVariable String userId) {
+    public int getSubmissionsCountByUser(@PathVariable int userId) {
         List<Submission> submissions = submissionService.getUserSubmissions(userId);
         return submissions.size();
     }
@@ -48,8 +48,5 @@ public class SubmissionController {
         Submission updated = submissionService.updateSubmission(submissionId, dto);
         return ResponseEntity.ok(updated);
     }
-
-
-
 
 }

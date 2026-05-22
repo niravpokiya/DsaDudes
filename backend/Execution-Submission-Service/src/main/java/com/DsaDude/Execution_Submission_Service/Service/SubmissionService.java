@@ -25,7 +25,7 @@ public class SubmissionService {
     }
 
     // ✅ Get all submissions of a user
-    public List<Submission> getUserSubmissions(String userId) {
+    public List<Submission> getUserSubmissions(int userId) {
         return submissionRepository.findByUserId(userId);
     }
 
