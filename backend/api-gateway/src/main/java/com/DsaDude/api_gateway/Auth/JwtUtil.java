@@ -2,13 +2,11 @@ package com.DsaDude.api_gateway.Auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
 
 @Component
 public class JwtUtil {
@@ -17,8 +15,9 @@ public class JwtUtil {
     private String secret;
 
     private SecretKey getKey() {
-        byte[] decodedKey = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(decodedKey);
+        return Keys.hmacShaKeyFor(
+                secret.getBytes()
+        );
     }
 
     public boolean validateToken(String token) {
@@ -28,8 +27,10 @@ public class JwtUtil {
                     .build()
                     .parseSignedClaims(token);
             return true;
-
         } catch (Exception e) {
+
+            e.printStackTrace();
+
             return false;
         }
     }

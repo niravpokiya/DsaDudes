@@ -1,16 +1,30 @@
 import axios from 'axios';
 
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || import.meta.env.API_BASE_URL,
+    baseURL: import.meta.env.VITE_API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
+console.log(api.defaults.baseURL);
+
+// add token to every request if available
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+
+    if (token) {
+        config.headers.Authorization =
+            `Bearer ${token}`;
+    }
+
+    return config;
+});
+
 // Auth helpers
 export function setAuthToken(token) {
   if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    console.log('Auth token set:', token);
     localStorage.setItem('token', token);
   }
 }

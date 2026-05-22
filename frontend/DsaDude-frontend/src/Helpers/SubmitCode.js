@@ -1,40 +1,23 @@
-async function SubmitCode(code, language, problemSlug, userId = null, onStatusUpdate = null) {
-  const token = localStorage.getItem("token");
-  if(userId == null) {
-    console.alert("User ID is required to submit code. but not found. ");
-  }
+import { api } from "../utils/api";
 
-  if (!token) {
-    alert("You must be logged in to submit code.");
-    return;
-  }
+ 
+async function SubmitCode(code, language, problemSlug, userId = null, onStatusUpdate = null) {
 
   try {
-    const response = await fetch(`http://localhost:8080/api/code/submit`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({
+    const response = await api.post(
+      "/code/submit",
+      {
         sourceCode: code,
-        language: language,
-        userId: userId,
-        problemSlug: problemSlug,
-        typeOfJob: "SUBMIT"
-      }),
-    });
+        language,
+        userId,
+        problemSlug,
+        typeOfJob: "SUBMIT",
+      },
+    );
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("Submission failed:", error);
-      alert(`Error: ${response.status} ${error}`);
-      return;
-    }
-
-    const result = await response.json();
-    const id = result.jobId;
-    return PollForSubmission(id, token, 60, 1000, onStatusUpdate); // you can handle this result in UI
+    const result = response.data;
+    const jobId = result.jobId;
+    return PollForSubmission(jobId, 60, 1000, onStatusUpdate); // you can handle this result in UI
 
   } catch (error) {
     console.error("Error submitting code:", error);
@@ -44,49 +27,19 @@ async function SubmitCode(code, language, problemSlug, userId = null, onStatusUp
 
 // New function for running sample test cases
 async function RunSampleTest(code, language, input, problemSlug, userId = null, onStatusUpdate = null) {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    alert("You must be logged in to run code.");
-    return;
-  }
 
   try {
     // Submit the job first
-    const response = await fetch(`http://localhost:8080/api/code/run`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        sourceCode: code,
-        language: language,
-        input: input,
-        problemSlug: problemSlug,
-        userId: userId,
-        typeOfJob: "RUN"
-      }),
+    const response = await api.post("/code/run", {
+      sourceCode: code,
+      language,
+      input,
+      problemSlug,
+      userId,
+      typeOfJob: "RUN",
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("Run failed:", error);
-      if (onStatusUpdate) {
-        onStatusUpdate({
-          status: "ERROR",
-          message: `Submission failed: ${error}`
-        });
-      }
-      return {
-        output: "",
-        error: `Backend Error: ${response.status}`,
-        exitCode: -1,
-        time: 0,
-      };
-    }
-
-    const submitResult = await response.json(); 
+    const submitResult = response.data;
     
     if (onStatusUpdate) {
       onStatusUpdate({
@@ -97,8 +50,7 @@ async function RunSampleTest(code, language, input, problemSlug, userId = null, 
     }
     
     // Poll for results
-    return await pollForResult(submitResult.jobId, token, 15, 500, onStatusUpdate);
-
+    return await pollForResult(submitResult.jobId, 15, 500, onStatusUpdate); 
   } catch (error) {
     console.error("Error running code:", error);
     if (onStatusUpdate) {
@@ -117,43 +69,19 @@ async function RunSampleTest(code, language, input, problemSlug, userId = null, 
 }
 
 // Enhanced polling function to get execution results
-async function pollForResult(jobId, token, maxAttempts = 30, intervalMs = 1000, onStatusUpdate = null) {
+async function pollForResult(jobId, maxAttempts = 30, intervalMs = 1000, onStatusUpdate = null) {
   let consecutiveErrors = 0;
   const maxConsecutiveErrors = 3;
 
   for (let attempt = 0; attempt
      < maxAttempts; attempt++) {
     try {
-      const response = await fetch(`http://localhost:8080/api/code/${jobId}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-      });
+      const response = await api.get(`/code/${jobId}`);
 
       // Reset error counter on successful request
       consecutiveErrors = 0;
 
-      if (!response.ok) {
-        console.warn(`Poll attempt ${attempt + 1}: HTTP ${response.status}`);
-        if (onStatusUpdate) {
-          onStatusUpdate({
-            status: "POLLING_ERROR",
-            message: `Server responded with ${response.status}`,
-            attempt: attempt + 1,
-            jobId: jobId
-          });
-        }
-        
-        if (attempt === maxAttempts - 1) {
-          return createErrorResult(`HTTP ${response.status}`, attempt + 1);
-        }
-        await new Promise(resolve => setTimeout(resolve, intervalMs));
-        continue;
-      }
-
-      const result = await response.json();
+      const result = response.data;
       // console.log(`Poll attempt ${attempt + 1}: Status=${result.status}, Verdict=${result.verdict}`);
 
       // Enhanced status mapping and notification
@@ -214,8 +142,7 @@ async function pollForResult(jobId, token, maxAttempts = 30, intervalMs = 1000, 
 }
 
 async function PollForSubmission(
-  jobId,
-  token,
+  jobId, 
   maxAttempts = 60,
   intervalMs = 1000,
   onStatusUpdate = null
@@ -225,31 +152,11 @@ async function PollForSubmission(
 
     try {
 
-      const response = await fetch(
-        `http://localhost:8080/api/code/submit/${jobId}`,
-        {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        }
+       const response = await api.get(
+        `/code/submit/${jobId}`,
       );
 
-      if (!response.ok) {
-
-        if (attempt === maxAttempts - 1) {
-          throw new Error(
-            `Polling failed with status ${response.status}`
-          );
-        }
-
-        await new Promise(resolve => setTimeout(resolve, intervalMs));
-        continue;
-      }
-
-      const result = await response.json();
-
+      const result = response.data;
       console.log("Polling Result:", result);
 
       const status =

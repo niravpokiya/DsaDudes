@@ -63,11 +63,11 @@ const NavBar = () => {
               </button>
             ) : (
               <button
-                onClick={() => navigate('/', { state: { authRequired: true } })}
+                onClick={() => navigate('/login')}
                 className="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-secondary hover:text-primary hover:bg-accent"
                 style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
               >
-                Login
+                Sign in
               </button>
             )}
           </div>

@@ -31,57 +31,71 @@ public class JwtFilter implements GlobalFilter {
     );
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    public Mono<Void> filter(ServerWebExchange exchange,
+                             GatewayFilterChain chain) {
+
         String path = exchange.getRequest().getURI().getPath();
 
+        // Allow preflight CORS requests
+        if (exchange.getRequest().getMethod().name().equals("OPTIONS")) {
+            return chain.filter(exchange);
+        }
+
         // PUBLIC ROUTES
-        boolean isPublic = PUBLIC_ROUTES.stream().anyMatch(path::startsWith);
+        boolean isPublic = PUBLIC_ROUTES.stream()
+                .anyMatch(path::startsWith);
+
         if (isPublic) {
             return chain.filter(exchange);
         }
 
         // JWT CHECK
-        String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+        String authHeader = exchange.getRequest()
+                .getHeaders()
+                .getFirst("Authorization");
+
+        if (authHeader == null ||
+                !authHeader.startsWith("Bearer ")) {
+            exchange.getResponse()
+                    .setStatusCode(HttpStatus.UNAUTHORIZED);
+
             return exchange.getResponse().setComplete();
         }
 
         String token = authHeader.substring(7);
-        if (!jwtUtil.validateToken(token)) {
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+
+        System.out.println("TOKEN EXTRACTED");
+
+        boolean valid = jwtUtil.validateToken(token);
+
+        System.out.println("TOKEN VALID = " + valid);
+
+        if (!valid) {
+            System.out.println("JWT FAILED");
+            exchange.getResponse()
+                    .setStatusCode(HttpStatus.UNAUTHORIZED);
+
             return exchange.getResponse().setComplete();
         }
 
+        System.out.println("JWT PASSED");
         String username = jwtUtil.extractUsername(token);
         String role = jwtUtil.extractRole(token);
-        boolean routeMatched = false;
 
-        // ROLE AUTHORIZATION
-        for (Map.Entry<String, List<String>> entry : ROLE_ACCESS.entrySet()) {
-            if (path.startsWith(entry.getKey())) {
-                routeMatched = true;
-                if (!entry.getValue().contains(role)) {
-                    exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                    return exchange.getResponse().setComplete();
-                }
-                break;
-            }
-        }
+        ServerHttpRequest request =
+                exchange.getRequest().mutate()
+                        .header("X-USER", username)
+                        .header("X-ROLE", role)
+                        .header("X-USER-ID",
+                                String.valueOf(
+                                        jwtUtil.extractUserId(token)
+                                ))
+                        .build();
 
-        // No role config found
-        if (!routeMatched) {
-            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-            return exchange.getResponse().setComplete();
-        }
-
-        // Forward headers
-        ServerHttpRequest request = exchange.getRequest().mutate()
-                .header("X-USER", username)
-                .header("X-ROLE", role)
-                .header("X-USER-ID", String.valueOf(jwtUtil.extractUserId(token)))
-                .build();
-
-        return chain.filter(exchange.mutate().request(request).build());
+        return chain.filter(
+                exchange.mutate()
+                        .request(request)
+                        .build()
+        );
     }
 }

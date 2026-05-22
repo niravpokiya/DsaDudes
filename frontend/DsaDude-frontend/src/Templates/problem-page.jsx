@@ -6,6 +6,7 @@ import SubmitCode, { RunSampleTest } from "../Helpers/SubmitCode";
 import languageSnippets from "../snippets/snippet";
 import EditorArea from "./editor-area";
 import ProblemSidebar from "./problem-sidebar";
+import { api } from "../utils/api";
 
 export default function ProblemsPage() {
   const { slug } = useParams();
@@ -88,10 +89,17 @@ export default function ProblemsPage() {
   }, [user]);
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/question/${slug}`)
-      .then((res) => res.json())
-      .then((data) => setProblem(data.data))
-      .catch((err) => console.error(err));
+    const fetchProblem = async () => {
+      try {
+        const response = await api.get(`/question/${slug}`);
+
+        setProblem(response.data.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchProblem();
   }, [slug]);
 
   useEffect(() => {
@@ -123,26 +131,12 @@ export default function ProblemsPage() {
           return;
         }
 
-        const response = await fetch(
-          `http://localhost:8080/api/submissions/all-submissions/${user.id}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          },
+        const response = await api.get(
+          `/submissions/all-submissions/${user.id}`,
         );
 
-        if (!response.ok) {
-          console.error("Failed to fetch submissions", response.status);
-          setSubmissions([]);
-          setHasLoadedSubmissions(true);
-          return;
-        }
+        const payload = response.data;
 
-        const text = await response.text();
-        const payload = text ? JSON.parse(text) : [];
         const list = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.data)
@@ -239,7 +233,7 @@ export default function ProblemsPage() {
           input,
           slug,
           user ? user.id : null,
-        ); 
+        );
         outputs.push(data);
 
         // Compare output with flexible normalization

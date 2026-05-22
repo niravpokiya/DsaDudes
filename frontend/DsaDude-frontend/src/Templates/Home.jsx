@@ -1,28 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import Login from '../Security/Login';
-import Register from '../Security/Register';
+import { Link } from 'react-router-dom';
 
 const Home = () => {
-    const location = useLocation();
-    const navigate = useNavigate();
-    const [showAuthModal, setShowAuthModal] = useState(false);
-    const [activeTab, setActiveTab] = useState('login');
-
-    useEffect(() => {
-        if (location.state && location.state.authRequired) {
-            setShowAuthModal(true);
-            setActiveTab('login');
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location, navigate]);
-    
-    const handleAuthSuccess = () => {
-        setShowAuthModal(false);
-        navigate('/', { replace: true });
-        window.location.reload();
-    };
-
     return (
         <div className="page-inner animate-fadeInUp">
             <div className="card hover-lift" style={{
@@ -71,7 +49,7 @@ const Home = () => {
                         instant feedback, and a LeetCode-inspired experience.
                     </p>
                     <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                        <a href="/problems" className="btn-primary" style={{
+                        <Link to="/problems" className="btn-primary" style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '0.5rem',
@@ -81,19 +59,17 @@ const Home = () => {
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M5 12h14M12 5l7 7-7 7"/>
                             </svg>
-                        </a>
-                        <button className="btn-secondary" style={{
+                        </Link>
+                        <Link to="/login" className="btn-secondary" style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '0.5rem'
                         }}>
-                            <span>Learn More</span>
+                            <span>Sign In</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                <path d="M12 17h.01"/>
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
                             </svg>
-                        </button>
+                        </Link>
                     </div>
                 </div>
                 
@@ -177,40 +153,6 @@ const Home = () => {
                 ))}
             </div>
 
-            {/* Auth Modal */}
-            {showAuthModal && (
-                <div className="fixed inset-0 z-[999] flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/60" onClick={() => setShowAuthModal(false)} />
-                    <div className="relative w-full max-w-md mx-4 rounded-lg border border-[var(--border-primary)] shadow-2xl" style={{ background: 'var(--bg-tertiary)' }}>
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-secondary)]">
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    className={`px-3 py-1 rounded ${activeTab === 'login' ? 'bg-[var(--bg-accent)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] border border-[var(--border-primary)]'}`}
-                                    onClick={() => setActiveTab('login')}
-                                >
-                                    Login
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`px-3 py-1 rounded ${activeTab === 'register' ? 'bg-[var(--bg-accent)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] border border-[var(--border-primary)]'}`}
-                                    onClick={() => setActiveTab('register')}
-                                >
-                                    Register
-                                </button>
-                            </div>
-                            <button type="button" className="btn-ghost" onClick={() => setShowAuthModal(false)}>✕</button>
-                        </div>
-                        <div className="p-5">
-                            {activeTab === 'login' ? (
-                                <Login onSuccess={handleAuthSuccess} onToggle={() => setActiveTab('register')} />
-                            ) : (
-                                <Register onSuccess={handleAuthSuccess} onToggle={() => setActiveTab('login')} />
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }

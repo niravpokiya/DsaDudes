@@ -6,25 +6,11 @@ async function ValidateOutput(checker, input, userOutput, problemSlug, userId) {
     return 0;
   }
   try {
-    const validatorInput = `${input}${userOutput}`;  
+    const validatorInput = `${input}`.trim() + "\n" + `${userOutput}`.trim();  
     
     console.log("Validator input : "  + validatorInput)
     const token = localStorage.getItem("token");
     const res = await RunSampleTest(checker.code, checker.language, validatorInput, problemSlug, userId)
-    // const res = await fetch("http://localhost:8080/api/code/run", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json",
-    //               "Authorization": `Bearer ${token}`,
-    //             },
-    //   body: JSON.stringify({
-    //     sourceCode: checker.code,
-    //     language: checker.language,
-    //     input: validatorInput,
-    //     problemSlug,
-    //     userId: userId || null,
-    //     typeOfJob: "RUN"
-    //   }),
-    // });
 
     const data = res;
     const validatorOutput = (data.output || "").trim().toLowerCase(); 

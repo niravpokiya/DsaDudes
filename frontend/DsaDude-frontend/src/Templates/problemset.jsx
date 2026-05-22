@@ -1,33 +1,18 @@
 import { useEffect, useState } from "react";
 import { Await, Link } from "react-router-dom";
+import { api } from "../utils/api";
 
 const ProblemsList = () => {
-    const [problems, setProblems] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const problemsPerPage = 30;
+  const [problems, setProblems] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const problemsPerPage = 30;
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchProblems = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const response = await fetch("http://localhost:8080/api/question/all", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": token ? `Bearer ${token}` : "",
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            alert("You are not authorized. Please login.");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setProblems(data.data);
+        const response = await api.get("/question/all");
+  
+        setProblems(response.data.data);
       } catch (err) {
         console.error(err);
         alert("Failed to fetch problems.");
@@ -40,7 +25,10 @@ const ProblemsList = () => {
   // Pagination logic
   const indexOfLastProblem = currentPage * problemsPerPage;
   const indexOfFirstProblem = indexOfLastProblem - problemsPerPage;
-  const currentProblems = problems.slice(indexOfFirstProblem, indexOfLastProblem);
+  const currentProblems = problems.slice(
+    indexOfFirstProblem,
+    indexOfLastProblem,
+  );
 
   const totalPages = Math.ceil(problems.length / problemsPerPage);
 
@@ -56,160 +44,197 @@ const ProblemsList = () => {
         return "difficulty-easy";
     }
   };
-  
+
   const generateSlug = (title) => {
     return title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-") // replace non-alphanumeric with -
-        .replace(/^-+|-+$/g, ""); // trim leading/trailing -
-    };
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-") // replace non-alphanumeric with -
+      .replace(/^-+|-+$/g, ""); // trim leading/trailing -
+  };
   return (
-  <div className="page-inner">
-    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-      <h1 style={{
-        fontSize: '2.5rem',
-        fontWeight: 'var(--font-weight-bold)',
-        background: 'linear-gradient(135deg, var(--text-primary), var(--text-accent))',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        marginBottom: '0.5rem'
-      }}>
-        Problem List
-      </h1>
-      <p className="text-secondary" style={{ fontSize: '1.125rem' }}>
-        Practice with curated problems and improve your coding skills
-      </p>
-    </div>
+    <div className="page-inner">
+      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+        <h1
+          style={{
+            fontSize: "2.5rem",
+            fontWeight: "var(--font-weight-bold)",
+            background:
+              "linear-gradient(135deg, var(--text-primary), var(--text-accent))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            marginBottom: "0.5rem",
+          }}
+        >
+          Problem List
+        </h1>
+        <p className="text-secondary" style={{ fontSize: "1.125rem" }}>
+          Practice with curated problems and improve your coding skills
+        </p>
+      </div>
 
-    {/* Enhanced Table Container */}
-    <div className="problems-card animate-fadeInUp">
-      <div className="problem-list modern-scrollbar">
-        <table className="problems-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Title</th>
-              <th>Difficulty</th>
-              <th>Tags</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentProblems.map((problem, idx) => (
-              <tr key={problem.id}>
-                <td style={{ 
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  textAlign: 'center'
-                }}>
-                  {indexOfFirstProblem + idx + 1}
-                </td>
-                <td>
-                  <Link 
-                    to={`/problems/${generateSlug(problem.title)}`}
+      {/* Enhanced Table Container */}
+      <div className="problems-card animate-fadeInUp">
+        <div className="problem-list modern-scrollbar">
+          <table className="problems-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>Difficulty</th>
+                <th>Tags</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentProblems.map((problem, idx) => (
+                <tr key={problem.id}>
+                  <td
                     style={{
-                      color: 'var(--text-accent)',
-                      textDecoration: 'none',
-                      fontWeight: 'var(--font-weight-medium)',
-                      fontSize: '1rem'
+                      fontWeight: "var(--font-weight-medium)",
+                      color: "var(--text-secondary)",
+                      textAlign: "center",
                     }}
                   >
-                    {problem.title}
-                  </Link>
-                </td>
-                <td>
-                  <span className={`output-badge ${getDifficultyColor(problem.difficulty)}`}>
-                    {problem.difficulty}
-                  </span>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {problem.tags.map((tag, tagIdx) => (
-                      <span
-                        key={tagIdx}
-                        style={{
-                          background: 'var(--bg-accent)',
-                          color: 'var(--text-secondary)',
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: 'var(--radius)',
-                          fontSize: '0.75rem',
-                          fontWeight: 'var(--font-weight-medium)',
-                          border: '1px solid var(--border-primary)'
-                        }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    {indexOfFirstProblem + idx + 1}
+                  </td>
+                  <td>
+                    <Link
+                      to={`/problems/${generateSlug(problem.title)}`}
+                      style={{
+                        color: "var(--text-accent)",
+                        textDecoration: "none",
+                        fontWeight: "var(--font-weight-medium)",
+                        fontSize: "1rem",
+                      }}
+                    >
+                      {problem.title}
+                    </Link>
+                  </td>
+                  <td>
+                    <span
+                      className={`output-badge ${getDifficultyColor(problem.difficulty)}`}
+                    >
+                      {problem.difficulty}
+                    </span>
+                  </td>
+                  <td>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      {problem.tags.map((tag, tagIdx) => (
+                        <span
+                          key={tagIdx}
+                          style={{
+                            background: "var(--bg-accent)",
+                            color: "var(--text-secondary)",
+                            padding: "0.25rem 0.75rem",
+                            borderRadius: "var(--radius)",
+                            fontSize: "0.75rem",
+                            fontWeight: "var(--font-weight-medium)",
+                            border: "1px solid var(--border-primary)",
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Enhanced Pagination */}
+      <div className="pagination">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Prev
+        </button>
+
+        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+          let pageNum;
+          if (totalPages <= 7) {
+            pageNum = i + 1;
+          } else if (currentPage <= 4) {
+            pageNum = i + 1;
+          } else if (currentPage >= totalPages - 3) {
+            pageNum = totalPages - 6 + i;
+          } else {
+            pageNum = currentPage - 3 + i;
+          }
+          return (
+            <button
+              key={pageNum}
+              className={currentPage === pageNum ? "active" : ""}
+              onClick={() => setCurrentPage(pageNum)}
+              style={{
+                background:
+                  currentPage === pageNum
+                    ? "var(--text-accent)"
+                    : "var(--bg-tertiary)",
+                color:
+                  currentPage === pageNum
+                    ? "var(--bg-primary)"
+                    : "var(--text-primary)",
+                borderColor:
+                  currentPage === pageNum
+                    ? "var(--text-accent)"
+                    : "var(--border-primary)",
+              }}
+            >
+              {pageNum}
+            </button>
+          );
+        })}
+
+        <button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          Next
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
     </div>
-
-    {/* Enhanced Pagination */}
-    <div className="pagination">
-      <button
-        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-        disabled={currentPage === 1}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Prev
-      </button>
-      
-      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-        let pageNum;
-        if (totalPages <= 7) {
-          pageNum = i + 1;
-        } else if (currentPage <= 4) {
-          pageNum = i + 1;
-        } else if (currentPage >= totalPages - 3) {
-          pageNum = totalPages - 6 + i;
-        } else {
-          pageNum = currentPage - 3 + i;
-        }
-        return (
-          <button
-            key={pageNum}
-            className={currentPage === pageNum ? 'active' : ''}
-            onClick={() => setCurrentPage(pageNum)}
-            style={{
-              background: currentPage === pageNum ? 'var(--text-accent)' : 'var(--bg-tertiary)',
-              color: currentPage === pageNum ? 'var(--bg-primary)' : 'var(--text-primary)',
-              borderColor: currentPage === pageNum ? 'var(--text-accent)' : 'var(--border-primary)'
-            }}
-          >
-            {pageNum}
-          </button>
-        );
-      })}
-      
-      <button
-        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-        disabled={currentPage === totalPages}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}
-      >
-        Next
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-
   );
 };
 
