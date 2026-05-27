@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { UserContext } from "../Context/userContext";
 import ProfileAbout from "./Profile/ProfileAbout";
+import ProfileDifficultyGraph from "./Profile/ProfileDifficultyGraph";
 import ProfileHeader from "./Profile/ProfileHeader";
 import ProfileHeatmap from "./Profile/ProfileHeatmap";
 import ProfileStats from "./Profile/ProfileStats";
@@ -63,6 +64,21 @@ function Profile() {
               Progress Overview
             </h3>
             <ProfileStats user={user} />
+          </div>
+
+          <div style={cardStyle}>
+            <h3 
+              style={{ 
+                fontSize: "1.15rem", 
+                fontWeight: "600", 
+                letterSpacing: "-0.01em",
+                color: "#f4f4f5",
+                marginBottom: "1.25rem" 
+              }}
+            >
+              Difficulty Breakdown
+            </h3>
+            <ProfileDifficultyGraph />
           </div>
 
           {/* Heatmap Section */}

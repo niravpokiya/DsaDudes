@@ -24,6 +24,6 @@ export const increment_submission_count = async (userId) => {
   return await api.put(`/user/${userId}/increment-submissions`);
 };
 
-export const increment_solved_count = async (userId) => {
-  return await api.put(`/user/${userId}/increment-solved`);
+export const increment_solved_count = async (userId, difficulty) => {
+  return await api.put(`/user/${userId}/increment-solved?difficulty=${difficulty}`);
 };
