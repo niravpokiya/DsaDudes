@@ -1,5 +1,4 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logout from '../security/logout';
 
 const NavBar = () => {
   const location = useLocation();
@@ -50,18 +49,7 @@ const NavBar = () => {
                 </Link>
               );
             })}
-            {isLoggedIn ? (
-              <button
-                onClick={() => {
-                  logout();
-                  navigate('/');
-                }}
-                className="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-secondary hover:text-primary hover:bg-accent"
-                style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
-              >
-                Logout
-              </button>
-            ) : (
+            {!isLoggedIn && (
               <button
                 onClick={() => navigate('/login')}
                 className="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-secondary hover:text-primary hover:bg-accent"

@@ -1,9 +1,9 @@
-import { Eye, EyeOff, LoaderCircle, Lock, Mail, User, UserPlus } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../Context/userContext";
 import { login, register } from "../utils/auth-apis";
-import AuthShell from "./AuthShell";
+import AuthPageShell from "./AuthPageShell";
 import { validateRegisterForm } from "./authValidation";
 
 const Register = () => {
@@ -17,22 +17,21 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
 
   const redirectPath = useMemo(() => {
     const from = location.state?.from;
-    return from?.pathname ? `${from.pathname}${from.search || ""}${from.hash || ""}` : "/";
+    return from?.pathname ? `${from.pathname}${from.search || ""}${from.hash || ""}` : "/profile";
   }, [location.state]);
 
   useEffect(() => {
     if (localStorage.getItem("token")) {
-      navigate(redirectPath, { replace: true });
+      navigate("/profile", { replace: true });
     }
-  }, [navigate, redirectPath]);
+  }, [navigate]);
 
   const handleChange = (field) => (event) => {
     const value = event.target.value;
@@ -79,156 +78,177 @@ const Register = () => {
   };
 
   return (
-    <AuthShell
-      title="Create account"
-      subtitle="Join DSADude and start solving."
-      switchText="Already have an account?"
-      switchLink="/login"
-      switchLabel="Sign in"
-      switchState={location.state}
-      highlights={[
-        { title: "Instant access", description: "Registration finishes with an automatic login." },
-        { title: "Validation", description: "Email, password strength, and confirmation are checked." },
-        { title: "Accessible UX", description: "Labels, focus rings, and clear feedback are built in." },
-      ]}
+    <AuthPageShell
+      title="Sign up"
+      subtitle="Create a new account."
     >
-      <div className="space-y-5">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-purple-200">Create account</p>
-          <h2 className="text-2xl font-semibold text-white">Start your profile</h2>
-          <p className="text-sm leading-6 text-slate-400">Pick a username, email, and password.</p>
+      <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {submitError ? (
+          <div style={{ border: "1px solid var(--error)", background: "var(--error-bg)", color: "var(--error)", borderRadius: "12px", padding: "12px 14px", fontSize: "13px" }} role="alert">
+            {submitError}
+          </div>
+        ) : null}
+
+        <div>
+          <label htmlFor="register-username" style={labelStyle}>Username</label>
+          <input
+            id="register-username"
+            type="text"
+            autoComplete="username"
+            value={form.username}
+            onChange={handleChange("username")}
+            aria-invalid={Boolean(errors.username)}
+            placeholder="your-username"
+            style={inputStyle}
+          />
+          {errors.username ? <p style={errorStyle}>{errors.username}</p> : null}
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-          {submitError ? (
-            <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
-              {submitError}
-            </div>
-          ) : null}
+        <div>
+          <label htmlFor="register-email" style={labelStyle}>Email</label>
+          <input
+            id="register-email"
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={handleChange("email")}
+            aria-invalid={Boolean(errors.email)}
+            placeholder="you@example.com"
+            style={inputStyle}
+          />
+          {errors.email ? <p style={errorStyle}>{errors.email}</p> : null}
+        </div>
 
-          <div className="space-y-2">
-            <label htmlFor="register-username" className="block text-sm font-medium text-slate-200">
-              Username
-            </label>
-            <div className="relative">
-              <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                id="register-username"
-                type="text"
-                autoComplete="username"
-                value={form.username}
-                onChange={handleChange("username")}
-                aria-invalid={Boolean(errors.username)}
-                aria-describedby={errors.username ? "register-username-error" : undefined}
-                className="h-11 w-full rounded-2xl border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-purple-400/70 focus:bg-white/10 focus:ring-4 focus:ring-purple-500/15"
-                placeholder="your-username"
-              />
-            </div>
-            <p id="register-username-error" className={`min-h-5 text-sm text-red-300 ${errors.username ? "opacity-100" : "opacity-0"}`} aria-live="polite">
-              {errors.username || "Username error"}
-            </p>
+        <div>
+          <label htmlFor="register-password" style={labelStyle}>Password</label>
+          <div style={passwordFieldStyle}>
+            <input
+              id="register-password"
+              type={showPasswords ? "text" : "password"}
+              autoComplete="new-password"
+              value={form.password}
+              onChange={handleChange("password")}
+              aria-invalid={Boolean(errors.password)}
+              placeholder="Create password"
+              style={passwordInputStyle}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPasswords((previous) => !previous)}
+              aria-label={showPasswords ? "Hide password" : "Show password"}
+              aria-pressed={showPasswords}
+              style={toggleButtonStyle}
+            >
+              {showPasswords ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
+          {errors.password ? <p style={errorStyle}>{errors.password}</p> : null}
+        </div>
 
-          <div className="space-y-2">
-            <label htmlFor="register-email" className="block text-sm font-medium text-slate-200">
-              Email address
-            </label>
-            <div className="relative">
-              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                id="register-email"
-                type="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={handleChange("email")}
-                aria-invalid={Boolean(errors.email)}
-                aria-describedby={errors.email ? "register-email-error" : undefined}
-                className="h-11 w-full rounded-2xl border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-purple-400/70 focus:bg-white/10 focus:ring-4 focus:ring-purple-500/15"
-                placeholder="you@example.com"
-              />
-            </div>
-            <p id="register-email-error" className={`min-h-5 text-sm text-red-300 ${errors.email ? "opacity-100" : "opacity-0"}`} aria-live="polite">
-              {errors.email || "Email error"}
-            </p>
+        <div>
+          <label htmlFor="register-confirm" style={labelStyle}>Confirm password</label>
+          <div style={passwordFieldStyle}>
+            <input
+              id="register-confirm"
+              type={showPasswords ? "text" : "password"}
+              autoComplete="new-password"
+              value={form.confirmPassword}
+              onChange={handleChange("confirmPassword")}
+              aria-invalid={Boolean(errors.confirmPassword)}
+              placeholder="Repeat password"
+              style={passwordInputStyle}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPasswords((previous) => !previous)}
+              aria-label={showPasswords ? "Hide password" : "Show password"}
+              aria-pressed={showPasswords}
+              style={toggleButtonStyle}
+            >
+              {showPasswords ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
+          {errors.confirmPassword ? <p style={errorStyle}>{errors.confirmPassword}</p> : null}
+        </div>
 
-          <div className="space-y-2">
-            <label htmlFor="register-password" className="block text-sm font-medium text-slate-200">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                id="register-password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                value={form.password}
-                onChange={handleChange("password")}
-                aria-invalid={Boolean(errors.password)}
-                aria-describedby={errors.password ? "register-password-error" : "register-password-hint"}
-                className="h-11 w-full rounded-2xl border border-white/10 bg-white/5 pl-11 pr-12 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-purple-400/70 focus:bg-white/10 focus:ring-4 focus:ring-purple-500/15"
-                placeholder="Create a strong password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((value) => !value)}
-                className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-transparent text-slate-400 transition hover:border-white/10 hover:bg-white/5 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            <div id="register-password-hint" className="min-h-5 text-xs text-slate-500" aria-hidden="true">
-              Use a strong password.
-            </div>
-            <p id="register-password-error" className={`min-h-5 text-sm text-red-300 ${errors.password ? "opacity-100" : "opacity-0"}`} aria-live="polite">
-              {errors.password || "Password error"}
-            </p>
-          </div>
+        <button type="submit" disabled={isSubmitting} style={buttonStyle}>
+          {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+          <span>{isSubmitting ? "Creating account..." : "Create account"}</span>
+        </button>
 
-          <div className="space-y-2">
-            <label htmlFor="register-confirm" className="block text-sm font-medium text-slate-200">
-              Confirm password
-            </label>
-            <div className="relative">
-              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                id="register-confirm"
-                type={showConfirm ? "text" : "password"}
-                autoComplete="new-password"
-                value={form.confirmPassword}
-                onChange={handleChange("confirmPassword")}
-                aria-invalid={Boolean(errors.confirmPassword)}
-                aria-describedby={errors.confirmPassword ? "register-confirm-error" : undefined}
-                className="h-11 w-full rounded-2xl border border-white/10 bg-white/5 pl-11 pr-12 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-purple-400/70 focus:bg-white/10 focus:ring-4 focus:ring-purple-500/15"
-                placeholder="Repeat your password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm((value) => !value)}
-                className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-transparent text-slate-400 transition hover:border-white/10 hover:bg-white/5 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                aria-label={showConfirm ? "Hide password" : "Show password"}
-              >
-                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            <p id="register-confirm-error" className={`min-h-5 text-sm text-red-300 ${errors.confirmPassword ? "opacity-100" : "opacity-0"}`} aria-live="polite">
-              {errors.confirmPassword || "Confirm password error"}
-            </p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-indigo-500 px-4 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(139,92,246,0.25)] transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-400/40 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-            {isSubmitting ? "Creating account..." : "Create account"}
-          </button>
-        </form>
-      </div>
-    </AuthShell>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "13px" }}>
+          <Link to="/login" state={location.state}>
+            Sign in
+          </Link>
+          <Link to="/">
+            Back to home
+          </Link>
+        </div>
+      </form>
+    </AuthPageShell>
   );
+};
+
+const inputStyle = {
+  width: "100%",
+  height: "44px",
+  borderRadius: "10px",
+  border: "1px solid var(--border-primary)",
+  background: "var(--bg-primary)",
+  color: "var(--text-primary)",
+  padding: "0 14px",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const passwordFieldStyle = {
+  position: "relative",
+};
+
+const passwordInputStyle = {
+  ...inputStyle,
+  paddingRight: "48px",
+};
+
+const toggleButtonStyle = {
+  position: "absolute",
+  top: "50%",
+  right: "12px",
+  transform: "translateY(-50%)",
+  border: "none",
+  background: "transparent",
+  color: "var(--text-secondary)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const labelStyle = {
+  display: "block",
+  marginBottom: "6px",
+  fontSize: "14px",
+  fontWeight: 600,
+};
+
+const buttonStyle = {
+  height: "44px",
+  borderRadius: "10px",
+  border: "1px solid var(--text-accent)",
+  background: "var(--text-accent)",
+  color: "var(--bg-primary)",
+  fontWeight: 700,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+};
+
+const errorStyle = {
+  margin: "6px 0 0",
+  color: "var(--error)",
+  fontSize: "12px",
 };
 
 export default Register;

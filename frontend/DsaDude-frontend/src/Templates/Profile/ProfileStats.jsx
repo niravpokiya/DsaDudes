@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { user_submissions_stats } from '../../utils/submission-apis';
 
 const Stat = ({ label, value }) => (

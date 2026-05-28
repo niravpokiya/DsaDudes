@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 
 const Home = () => {
+    const isLoggedIn = !!localStorage.getItem('token');
+
     return (
         <div className="page-inner animate-fadeInUp">
             <div className="card hover-lift" style={{
@@ -60,6 +62,18 @@ const Home = () => {
                                 <path d="M5 12h14M12 5l7 7-7 7"/>
                             </svg>
                         </Link>
+                        {isLoggedIn ? (
+                        <Link to="/profile" className="btn-secondary" style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            <span>Profile</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </Link>
+                        ) : (
                         <Link to="/login" className="btn-secondary" style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -70,6 +84,7 @@ const Home = () => {
                                 <path d="M5 12h14M12 5l7 7-7 7"/>
                             </svg>
                         </Link>
+                        )}
                     </div>
                 </div>
                 
