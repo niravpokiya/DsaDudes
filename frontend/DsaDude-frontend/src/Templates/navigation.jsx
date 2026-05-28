@@ -16,17 +16,26 @@ const NavBar = () => {
     <nav className="top-nav">
       <div className="container">
         <div className="flex justify-between items-center h-12">
-          <Link 
-            to="/" 
-            className="text-xl font-bold text-accent hover:text-primary transition-colors"
-            style={{
-              background: 'linear-gradient(135deg, var(--text-accent), #ff8c00)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
+          <Link
+            to="/"
+            className="brand-link flex items-center gap-3 rounded-xl px-2 py-1.5 text-primary hover:bg-[var(--bg-accent)] transition-all duration-200"
+            style={{ textDecoration: "none" }}
           >
-            DSADude
+            <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] shadow-sm">
+              <img
+                src="/DsaChamp-logo.png"
+                alt="DsaChamp logo"
+                className="h-full w-full object-cover"
+              />
+            </span>
+            <span className="flex flex-col leading-tight">
+              <span className="text-base font-bold tracking-wide text-[var(--text-primary)]">
+                DsaChamp
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                Code. Submit. Level up.
+              </span>
+            </span>
           </Link>
           <div className="flex space-x-2 items-center">
             {navItems.map((item) => {

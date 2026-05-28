@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 
 /**
  * @param {{
@@ -33,7 +32,7 @@ const AuthShell = ({
             <div className="space-y-4">
               <span className="inline-flex items-center gap-2 rounded-md border border-[var(--border-glass)] bg-[var(--glass)] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-accent)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-light)] animate-pulse" />
-                DSADude Platform
+                DsaChamp Platform
               </span>
               <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)] leading-tight">
                 {title}

@@ -233,6 +233,14 @@ button:focus-visible {
   transition: all var(--transition-fast);
 }
 
+.top-nav a.brand-link {
+  padding: 0.25rem 0.5rem;
+}
+
+.top-nav a.brand-link::after {
+  display: none;
+}
+
 .top-nav a:hover {
   background: var(--bg-accent);
   color: var(--text-primary);

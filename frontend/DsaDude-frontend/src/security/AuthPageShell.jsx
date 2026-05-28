@@ -37,7 +37,7 @@ const AuthPageShell = ({ title, subtitle, children }) => {
       <section style={cardStyles}>
         <header style={{ marginBottom: "24px" }}>
           <p style={{ margin: "0 0 8px", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-accent)", fontWeight: 700 }}>
-            DsaDude Platform
+            DsaChamp Platform
           </p>
           <h1 style={titleStyles}>{title}</h1>
           <p style={subtitleStyles}>{subtitle}</p>

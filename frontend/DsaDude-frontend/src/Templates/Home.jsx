@@ -39,7 +39,7 @@ const Home = () => {
                         backgroundClip: 'text',
                         lineHeight: 1.2
                     }}>
-                        Welcome to DSADude
+                        Welcome to DsaChamp
                     </h1>
                     <p className="text-secondary" style={{
                         marginTop: '1rem',
