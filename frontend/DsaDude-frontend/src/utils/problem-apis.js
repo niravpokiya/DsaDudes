@@ -34,3 +34,30 @@ export const get_published_problems = async () => {
 export const get_user_authored_problems = async () => {
   return await api.get(`/question/all-authored`);
 };
+
+export const get_testcase_status = async (problemId, problemSlug) => {
+  return await api.get(`/question/tests/${problemId}/status`, {
+    params: { problemSlug },
+  });
+};
+
+export const download_testcases_zip = async (problemId, problemSlug) => {
+  return await api.get(`/question/tests/${problemId}/download`, {
+    params: { problemSlug },
+    responseType: "blob",
+  });
+};
+
+// uploading testcases as zip file
+export const upload_testcases = async (problemId, problemSlug, zipFile, userId) => {
+  const formData = new FormData();
+  formData.append("file", zipFile);
+  formData.append("problemSlug", problemSlug);
+
+  return await api.post(`/question/tests/${problemId}/upload`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      "X-USER-ID": String(userId),
+    },
+  });
+};
