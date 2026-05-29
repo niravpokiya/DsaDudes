@@ -12,11 +12,16 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.1.11",
+    "@uiw/react-md-editor": "^4.1.1",
     "axios": "^1.16.1",
+    "github-markdown-css": "^5.9.0",
+    "highlight.js": "^11.11.1",
+    "lodash.debounce": "^4.0.8",
     "lucide-react": "^1.8.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.8.0",
+    "rehype-highlight": "^7.0.2",
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {

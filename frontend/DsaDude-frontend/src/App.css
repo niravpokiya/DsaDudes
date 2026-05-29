@@ -15,14 +15,18 @@
   padding: 0 0;
   display: flex;
   justify-content: center;
+  align-items: stretch;
+}
+
+.main-content > * {
+  width: 100%;
+  min-width: 0;
 }
 
 /* Enhanced Problem List */
 .problem-list {
   max-height: calc(100vh - 200px);
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-primary) transparent;
 }
 
 .problem-list::-webkit-scrollbar {

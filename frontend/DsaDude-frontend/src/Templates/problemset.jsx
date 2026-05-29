@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Await, Link } from "react-router-dom";
-import { api } from "../utils/api";
+import { Link } from "react-router-dom";
+import { get_published_problems } from "../utils/problem-apis";
 
 const ProblemsList = () => {
   const [problems, setProblems] = useState([]);
@@ -10,7 +10,7 @@ const ProblemsList = () => {
   useEffect(() => {
     const fetchProblems = async () => {
       try {
-        const response = await api.get("/question/all");
+        const response = await get_published_problems();
   
         setProblems(response.data.data);
       } catch (err) {
@@ -46,6 +46,10 @@ const ProblemsList = () => {
   };
 
   const generateSlug = (title) => {
+    if (!title) {
+      return "";
+    }
+
     return title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-") // replace non-alphanumeric with -
@@ -74,9 +78,9 @@ const ProblemsList = () => {
       </div>
 
       {/* Enhanced Table Container */}
-      <div className="problems-card animate-fadeInUp">
-        <div className="problem-list modern-scrollbar">
-          <table className="problems-table">
+      <div className="problems-card animate-fadeInUp" style={{ maxWidth: "1100px", margin: "0 auto" }}>
+        <div className="problem-list modern-scrollbar" style={{ width: "100%" }}>
+          <table className="problems-table" style={{ width: "100%", tableLayout: "fixed" }}>
             <thead>
               <tr>
                 <th>#</th>
@@ -86,65 +90,76 @@ const ProblemsList = () => {
               </tr>
             </thead>
             <tbody>
-              {currentProblems.map((problem, idx) => (
-                <tr key={problem.id}>
-                  <td
-                    style={{
-                      fontWeight: "var(--font-weight-medium)",
-                      color: "var(--text-secondary)",
-                      textAlign: "center",
-                    }}
-                  >
-                    {indexOfFirstProblem + idx + 1}
-                  </td>
-                  <td>
-                    <Link
-                      to={`/problems/${generateSlug(problem.title)}`}
+              {currentProblems.map((problem, idx) => {
+                const topics = problem.topic ?? problem.tags ?? [];
+
+                return (
+                  <tr key={problem.id}>
+                    <td
                       style={{
-                        color: "var(--text-accent)",
-                        textDecoration: "none",
                         fontWeight: "var(--font-weight-medium)",
-                        fontSize: "1rem",
+                        color: "var(--text-secondary)",
+                        textAlign: "center",
                       }}
                     >
-                      {problem.title}
-                    </Link>
-                  </td>
-                  <td>
-                    <span
-                      className={`output-badge ${getDifficultyColor(problem.difficulty)}`}
-                    >
-                      {problem.difficulty}
-                    </span>
-                  </td>
-                  <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "0.5rem",
-                      }}
-                    >
-                      {problem.tags.map((tag, tagIdx) => (
-                        <span
-                          key={tagIdx}
-                          style={{
-                            background: "var(--bg-accent)",
-                            color: "var(--text-secondary)",
-                            padding: "0.25rem 0.75rem",
-                            borderRadius: "var(--radius)",
-                            fontSize: "0.75rem",
-                            fontWeight: "var(--font-weight-medium)",
-                            border: "1px solid var(--border-primary)",
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      {indexOfFirstProblem + idx + 1}
+                    </td>
+                    <td>
+                      <Link
+                        to={`/problems/${generateSlug(problem.title)}`}
+                        style={{
+                          color: "var(--text-accent)",
+                          textDecoration: "none",
+                          fontWeight: "var(--font-weight-medium)",
+                          fontSize: "1rem",
+                        }}
+                      >
+                        {problem.title}
+                      </Link>
+                    </td>
+                    <td>
+                      <span
+                        className={`output-badge ${getDifficultyColor(problem.difficulty)}`}
+                      >
+                        {problem.difficulty}
+                      </span>
+                    </td>
+                    <td>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        {topics.length > 0 ? (
+                          topics.map((tag, tagIdx) => (
+                            <span
+                              key={tagIdx}
+                              style={{
+                                background: "var(--bg-accent)",
+                                color: "var(--text-secondary)",
+                                padding: "0.25rem 0.75rem",
+                                borderRadius: "var(--radius)",
+                                fontSize: "0.75rem",
+                                fontWeight: "var(--font-weight-medium)",
+                                border: "1px solid var(--border-primary)",
+                                letterSpacing: "0.04em",
+                              }}
+                            >
+                              {String(tag).replace(/_/g, " ")}
+                            </span>
+                          ))
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                            No tags
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

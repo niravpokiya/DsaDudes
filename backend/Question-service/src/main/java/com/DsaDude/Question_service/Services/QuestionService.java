@@ -2,6 +2,7 @@ package com.DsaDude.Question_service.Services;
 
 import com.DsaDude.Question_service.DTO.QuestionDTO;
 import com.DsaDude.Question_service.DTO.Submission;
+import com.DsaDude.Question_service.Enums.Difficulty;
 import com.DsaDude.Question_service.Feign.SubmissionClient;
 import com.DsaDude.Question_service.Model.Example;
 import com.DsaDude.Question_service.Model.Question;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +24,7 @@ public class QuestionService {
 
     @Autowired
     private SubmissionClient submissionClient;
+
     // response wrapper.
     public static record ApiResponse(String message, Object data) {
 
@@ -39,8 +42,6 @@ public class QuestionService {
                 .description(dto.getDescription())
                 .difficulty(dto.getDifficulty())
                 .topic(dto.getTopic())
-                .tags(dto.getTags())
-                .constraints(dto.getConstraints())
                 .examples(exampleList)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -52,10 +53,76 @@ public class QuestionService {
         return ResponseEntity.status(201).body(new ApiResponse("Question saved successfully", saved));
     }
 
-    public ResponseEntity<ApiResponse> getAllQuestions() {
+    // create draft problem
+    public ResponseEntity<ApiResponse> createDraft(String userId) {
+        int userID = Integer.parseInt(userId);
+        // creating draft and adding placeholder in description and title...
+        Question draft = Question.builder()
+                .title("Target Sum")
+                .description("""
+                        Given an integer array `nums` and an integer `target`, return indices of the two numbers such that they add up to target.
+                        
+                        ## Example 1
+                        
+                        **Input:**
+                        
+                        ```txt
+                        nums = [2,7,11,15]
+                        target = 9
+                        ```
+                        
+                        **Output:**
+                        
+                        ```txt
+                        [0,1]
+                        ```
+                        
+                        ## input format
+                        
+                        - The first line contains an integer `n`, the number of elements in the array.
+                        - The second line contains `n` space-separated integers representing the elements of `nums`.
+                        - The third line contains an integer `target`.
+                        
+                        ## output format
+                        
+                        - Print two space-separated integers representing the indices of the two numbers whose sum equals `target`.
+                        
+                        - If output should be in array format, print:
+                        ```txt
+                        [index1,index2]
+                        ```""")
+                .difficulty(Difficulty.MEDIUM)
+                .topic(new ArrayList<>())
+                .examples(new ArrayList<>())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .createdBy(userID)
+                .build();
+
+        Question saved = questionRepository.save(draft);
+
+        return ResponseEntity.status(201)
+                .body(new QuestionService.ApiResponse("Draft created", saved));
+    }
+
+
+    public ResponseEntity<ApiResponse> getAllQuestions(boolean publishedOnly) {
+        if(publishedOnly) {
+            List<Question> questions = questionRepository.findByIsPublic(publishedOnly);
+            return ResponseEntity.ok(
+                    new ApiResponse("All questions retrieved", questions));
+        }
         List<Question> questions = questionRepository.findAll();
         return ResponseEntity.ok(
                 new ApiResponse("All questions retrieved", questions));
+    }
+
+    public ResponseEntity<ApiResponse> getAllQuestionsAuthoredByUser(String userId) {
+        int userID = Integer.parseInt(userId);
+        List<Question> questions = questionRepository.findByCreatedBy(userID);
+        return ResponseEntity.ok(
+                new ApiResponse("All questions retrieved", questions)
+        );
     }
 
     public ResponseEntity<ApiResponse> getQuestionById(String id) {
@@ -104,10 +171,9 @@ public class QuestionService {
         q.setDescription(dto.getDescription());
         q.setDifficulty(dto.getDifficulty());
         q.setTopic(dto.getTopic());
-        q.setTags(dto.getTags());
-        q.setConstraints(dto.getConstraints());
         q.setExamples(dto.getExamples());
         q.setUpdatedAt(LocalDateTime.now());
+        q.setCreatedBy(dto.getCreatedBy());
 
         questionRepository.save(q);
         return ResponseEntity.ok(new ApiResponse("Question updated", q));

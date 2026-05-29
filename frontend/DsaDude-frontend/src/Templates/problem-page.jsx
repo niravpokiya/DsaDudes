@@ -361,6 +361,7 @@ export default function ProblemsPage() {
             problem.difficulty
           );
         }
+        
         const submission = {
           ...res,
           id: Date.now(),

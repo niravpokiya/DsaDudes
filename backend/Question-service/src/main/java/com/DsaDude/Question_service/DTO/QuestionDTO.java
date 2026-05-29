@@ -13,9 +13,8 @@ public class QuestionDTO {
     private String description;
     private Difficulty difficulty;
     private List<Topic> topic;
-    private List<String> tags;
-    private List<String> constraints;
     private List<Example> examples;
+    private int createdBy; // user who created the problem
     private boolean staticSolution;
     private Validator checker;
 }

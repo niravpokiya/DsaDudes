@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -17,14 +19,45 @@ public class QuestionController {
     @Autowired
     private QuestionService questionService;
 
-    @PostMapping("/add")
+    // create problem
+    @PostMapping("/create")
     public ResponseEntity<QuestionService.ApiResponse> addQuestion(@RequestBody QuestionDTO question) {
         return questionService.addQuestion(question);
     }
+
+    // create draft problem
+    @PostMapping("/draft/create")
+    public ResponseEntity<QuestionService.ApiResponse> createDraft(@RequestHeader("X-USER-ID") String userId) {
+        return questionService.createDraft(userId);
+    }
+
+    // update problem
+    @PutMapping("/update/{id}")
+    public ResponseEntity<QuestionService.ApiResponse> updateQuestion(
+            @PathVariable String id,
+            @RequestBody QuestionDTO questionDTO
+    ) {
+        return questionService.updateQuestion(id, questionDTO);
+    }
+
+    // get all problems
     @GetMapping("/all")
     public ResponseEntity<QuestionService.ApiResponse> getAllQuestions() {
-        return questionService.getAllQuestions();
+        return questionService.getAllQuestions(false);
     }
+
+    @GetMapping("/all-published")
+    public ResponseEntity<QuestionService.ApiResponse> getAllPublishedQuestions() {
+        return questionService.getAllQuestions(true);
+    }
+
+    // all problems that are authored by perticular user
+    @GetMapping("/all-authored")
+    public ResponseEntity<QuestionService.ApiResponse> getAllAuthoredProblemsByUser(@RequestHeader("X-USER-ID") String userId) {
+        return questionService.getAllQuestionsAuthoredByUser(userId);
+    }
+
+
     @GetMapping("/id/{id}")
     public ResponseEntity<QuestionService.ApiResponse> getQuestionById(@PathVariable String id) {
         return questionService.getQuestionById(id);
@@ -38,7 +71,7 @@ public class QuestionController {
         for(QuestionDTO question : questions) {
             questionService.addQuestion(question);
         }
-        return questionService.getAllQuestions();
+        return questionService.getAllQuestions(false);
     }
 
     @GetMapping("/{slug}/submissions")
