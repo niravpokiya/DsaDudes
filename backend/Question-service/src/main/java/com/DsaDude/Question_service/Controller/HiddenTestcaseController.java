@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.DsaDude.Question_service.Helpers.AdminOnly;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,7 +29,11 @@ public class HiddenTestcaseController {
     @Autowired
     private TestcaseService testcaseService;
 
+
+    // ==========================      ADMIN ONLY ENDPOINTS      ===============================
+
     @GetMapping("/{problemId}/status")
+    @AdminOnly
     public ResponseEntity<?> getTestcaseStatus(
             @PathVariable("problemId") String problemId,
             @RequestParam("problemSlug") String problemSlug
@@ -64,6 +70,7 @@ public class HiddenTestcaseController {
     }
 
     @GetMapping("/{problemId}/download")
+    @AdminOnly
     public ResponseEntity<?> downloadTestcases(
             @PathVariable("problemId") String problemId,
             @RequestParam("problemSlug") String problemSlug
@@ -108,6 +115,7 @@ public class HiddenTestcaseController {
     }
 
     @PostMapping(value = "/{problemId}/upload", consumes = "multipart/form-data")
+    @AdminOnly
     public ResponseEntity<?> uploadTestCases(
             @RequestHeader("X-USER-ID") String userId,
             @PathVariable("problemId") String problemId,

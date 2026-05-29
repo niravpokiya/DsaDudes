@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -19,11 +20,12 @@ public class JwtFilter implements GlobalFilter {
     private JwtUtil jwtUtil;
 
     private static final Map<String, List<String>> ROLE_ACCESS = Map.of(
+            "/api/question/tests", List.of("ADMIN"),
             "/api/admin/", List.of("ADMIN"),
             "/api/question/", List.of("USER", "ADMIN"),
             "/api/submissions/", List.of("USER", "ADMIN")
     );
-
+    
     private static final List<String> PUBLIC_ROUTES = List.of(
             "/api/auth/login",
             "/api/auth/register",
@@ -79,11 +81,37 @@ public class JwtFilter implements GlobalFilter {
         }
 
         System.out.println("JWT PASSED");
-        String username = jwtUtil.extractUsername(token);
-        String role = jwtUtil.extractRole(token);
 
-        ServerHttpRequest request =
-                exchange.getRequest().mutate()
+        String username =
+                jwtUtil.extractUsername(token);
+
+        String role =
+                jwtUtil.extractRole(token);
+
+        // ROLE based AUTHORIZATION
+        String matchedPath = ROLE_ACCESS
+                .keySet()
+                .stream()
+                .filter(path::startsWith)
+                .max(Comparator.comparingInt(
+                        String::length
+                ))
+                .orElse(null);
+
+        if (matchedPath != null) {
+            List<String> allowedRoles = ROLE_ACCESS.get(matchedPath);
+            if (!allowedRoles.contains(role)) {
+                exchange.getResponse()
+                        .setStatusCode(
+                                HttpStatus.FORBIDDEN
+                        );
+                return exchange
+                        .getResponse()
+                        .setComplete();
+            }
+        }
+
+        ServerHttpRequest request = exchange.getRequest().mutate()
                         .header("X-USER", username)
                         .header("X-ROLE", role)
                         .header("X-USER-ID",
