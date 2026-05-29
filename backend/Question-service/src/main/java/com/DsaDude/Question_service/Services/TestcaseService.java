@@ -4,13 +4,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -25,6 +29,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.DsaDude.Question_service.Model.Example;
+import com.DsaDude.Question_service.Model.Question;
 import com.DsaDude.Question_service.Repository.QuestionRepository;
 
 @Service
@@ -79,6 +85,7 @@ public class TestcaseService {
             throw new NoSuchElementException("Problem not found");
         }
 
+        Question question = questionRepository.findById(problemId).orElseThrow();
         validateZip(zipFile);
 
         Path baseDir = resolveStorageBaseDir();
@@ -88,8 +95,10 @@ public class TestcaseService {
         try {
             Files.createDirectories(baseDir);
             stagingDir = Files.createTempDirectory(baseDir, problemSlug + "-");
-            unzipAndValidate(zipFile.getInputStream(), stagingDir);
+            List<Example> sampleExamples = unzipAndValidate(zipFile.getInputStream(), stagingDir);
             replaceDirectory(targetDir, stagingDir);
+            applyQuestionExamples(question, sampleExamples);
+            questionRepository.save(question);
         } catch (IOException e) {
             cleanupDirectory(stagingDir);
             throw new IllegalStateException("Failed to store testcases: " + e.getMessage(), e);
@@ -111,9 +120,11 @@ public class TestcaseService {
     }
 
     // unzipping uploaded file and validating it
-    private void unzipAndValidate(InputStream inputStream, Path targetDir) throws IOException {
+    private List<Example> unzipAndValidate(InputStream inputStream, Path targetDir) throws IOException {
         Set<String> inputBases = new HashSet<>();
         Set<String> outputBases = new HashSet<>();
+        Map<String, String> sampleInputs = new LinkedHashMap<>();
+        Map<String, String> sampleOutputs = new LinkedHashMap<>();
 
         try (ZipInputStream zis = new ZipInputStream(inputStream)) {
             ZipEntry entry;
@@ -137,15 +148,23 @@ public class TestcaseService {
                     throw new IllegalArgumentException("Invalid file: " + fileName + ". Only .in and .out files are allowed");
                 }
 
+                byte[] entryBytes = zis.readAllBytes();
+
                 String baseName;
                 if (fileName.endsWith(".in")) {
                     baseName = fileName.substring(0, fileName.length() - 3);
                     validateBaseName(baseName);
                     inputBases.add(baseName);
+                    if (baseName.startsWith("sample")) {
+                        sampleInputs.put(baseName, new String(entryBytes, StandardCharsets.UTF_8));
+                    }
                 } else {
                     baseName = fileName.substring(0, fileName.length() - 4);
                     validateBaseName(baseName);
                     outputBases.add(baseName);
+                    if (baseName.startsWith("sample")) {
+                        sampleOutputs.put(baseName, new String(entryBytes, StandardCharsets.UTF_8));
+                    }
                 }
 
                 Path filePath = targetDir.resolve(fileName).normalize();
@@ -156,7 +175,7 @@ public class TestcaseService {
                 }
 
                 Files.createDirectories(targetDir);
-                Files.copy(zis, filePath, StandardCopyOption.REPLACE_EXISTING);
+                Files.write(filePath, entryBytes);
                 zis.closeEntry();
             }
 
@@ -165,6 +184,7 @@ public class TestcaseService {
             }
         }
         validatePairs(inputBases, outputBases);
+        return buildSampleExamples(sampleInputs, sampleOutputs);
     }
 
     private void validateBaseName(String baseName) {
@@ -236,6 +256,54 @@ public class TestcaseService {
             // best effort cleanup
         }
     }
+
+    private List<Example> buildSampleExamples(Map<String, String> sampleInputs, Map<String, String> sampleOutputs) {
+        List<Example> examples = new ArrayList<>();
+
+        for (String sampleName : List.of("sample1", "sample2", "sample3")) {
+            if (sampleInputs.containsKey(sampleName) && sampleOutputs.containsKey(sampleName)) {
+                examples.add(createExample(sampleInputs.get(sampleName), sampleOutputs.get(sampleName)));
+            }
+        }
+
+        return examples;
+    }
+
+    private Example createExample(String input, String output) {
+        Example example = new Example();
+
+        try {
+            Field inputField = Example.class.getDeclaredField("input");
+            Field outputField = Example.class.getDeclaredField("output");
+            Field explanationField = Example.class.getDeclaredField("explanation");
+
+            inputField.setAccessible(true);
+            outputField.setAccessible(true);
+            explanationField.setAccessible(true);
+
+            inputField.set(example, input);
+            outputField.set(example, output);
+            explanationField.set(example, null);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed building sample example", e);
+        }
+
+        return example;
+    }
+
+    private void applyQuestionExamples(Question question, List<Example> sampleExamples) {
+        if (sampleExamples.isEmpty()) {
+            return;
+        } 
+        try {
+            Field examplesField = Question.class.getDeclaredField("examples");
+            examplesField.setAccessible(true);
+            examplesField.set(question, sampleExamples);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed updating question examples", e);
+        }
+    }
+
 
     public Map<String, Object> getTestcaseStatus(String problemId, String problemSlug) {
         if (problemId == null || problemId.isBlank()) {
