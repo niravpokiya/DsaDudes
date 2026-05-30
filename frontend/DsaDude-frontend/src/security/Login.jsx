@@ -5,6 +5,7 @@ import { UserContext } from "../Context/userContext";
 import { login } from "../utils/auth-apis";
 import AuthPageShell from "./AuthPageShell";
 import { validateLoginForm } from "./authValidation";
+import getUser from "../Helpers/getUser";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -35,36 +36,59 @@ const Login = () => {
     setSubmitError("");
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+ const handleSubmit = async (event) => {
+      event.preventDefault();
 
-    const validationErrors = validateLoginForm(form);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+      const validationErrors =
+        validateLoginForm(form);
 
-    setIsSubmitting(true);
-    setSubmitError("");
-
-    try {
-      const response = await login({
-        username: form.username.trim(),
-        password: form.password,
-      });
-
-      if (response.user) {
-        localStorage.setItem("user", JSON.stringify(response.user));
-        setUser(response.user);
+      if (
+        Object.keys(validationErrors)
+          .length > 0
+      ) {
+        setErrors(validationErrors);
+        return;
       }
 
-      navigate(redirectPath, { replace: true });
-    } catch (error) {
-      setSubmitError(error.message || "Invalid credentials.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      setIsSubmitting(true);
+      setSubmitError("");
+
+      try {
+        // login API
+        await login({
+          username:
+            form.username.trim(),
+          password:
+            form.password,
+        });
+
+      // fetch logged in user
+        const user = await getUser();
+
+        if (!user) {
+          throw new Error(
+            "Failed to load user."
+          );
+        }
+
+        // update context instantly
+        setUser(user);
+
+        // redirect
+        navigate(
+          redirectPath,
+          { replace: true }
+        );
+
+      } catch (error) {
+        setSubmitError(
+          error.message ||
+          "Invalid credentials."
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
 
   return (
     <AuthPageShell

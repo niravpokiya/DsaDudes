@@ -1,11 +1,9 @@
 package com.DsaDudes.User_service.Services;
 
-import com.DsaDudes.User_service.DTO.UserDTO;
-import com.DsaDudes.User_service.DTO.UserLoginRequest;
-import com.DsaDudes.User_service.Enums.Role;
-import com.DsaDudes.User_service.Models.User;
-import com.DsaDudes.User_service.Repository.UserRepository;
-import jakarta.transaction.Transactional;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,8 +12,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.DsaDudes.User_service.DTO.AdminUserDTO;
+import com.DsaDudes.User_service.DTO.UserDTO;
+import com.DsaDudes.User_service.DTO.UserLoginRequest;
+import com.DsaDudes.User_service.Enums.Role;
+import com.DsaDudes.User_service.Models.User;
+import com.DsaDudes.User_service.Repository.UserRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class UserService {
@@ -91,6 +95,12 @@ public class UserService {
                 "mediumSolved", user.getMediumSolvedCount(),
                 "hardSolved", user.getHardSolvedCount()
         );
+    }
+
+    public List<AdminUserDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(AdminUserDTO::new)
+                .toList();
     }
 
     @Transactional

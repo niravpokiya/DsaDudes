@@ -20,16 +20,16 @@ public class JwtFilter implements GlobalFilter {
     private JwtUtil jwtUtil;
 
     private static final Map<String, List<String>> ROLE_ACCESS = Map.of(
-            "/api/question/tests", List.of("ADMIN"),
             "/api/admin/", List.of("ADMIN"),
             "/api/question/", List.of("USER", "ADMIN"),
             "/api/submissions/", List.of("USER", "ADMIN")
     );
-    
+
     private static final List<String> PUBLIC_ROUTES = List.of(
             "/api/auth/login",
             "/api/auth/register",
-            "/api/code/run"
+            "/api/code/run",
+            "/api/question/all-published"
     );
 
     @Override

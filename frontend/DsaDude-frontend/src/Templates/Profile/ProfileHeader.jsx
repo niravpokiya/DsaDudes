@@ -1,16 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import logout from '../../security/logout';
+import { useContext } from 'react';
+import { UserContext } from '../../Context/userContext';
 
 const ProfileHeader = ({ user }) => {
   const navigate = useNavigate();
+  const { setUser } = useContext(UserContext);
   const displayName = user?.firstName || user?.username || 'Anonymous Coder';
   const handleEdit = () => {
     alert('Edit Profile coming soon');
   };
 
   const handleLogout = () => {
-    logout();
-    navigate('/');
+    logout(navigate, setUser);
   };
 
   return (

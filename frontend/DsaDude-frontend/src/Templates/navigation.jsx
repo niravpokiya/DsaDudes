@@ -1,50 +1,37 @@
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../Context/userContext";
-import { create_draft_problem } from "../utils/problem-apis";
 
 const NavBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, showToast } = useContext(UserContext);
-  const [isCreatingDraft, setIsCreatingDraft] = useState(false);
+  const { user } = useContext(UserContext);
   const isLoggedIn = Boolean(user);
-
   const navItems = [
-    { path: "/", label: "Home" },
-    { path: "/problems", label: "Problems" },
-    { path: "/submissions", label: "Submissions" },
-    { path: "/contributions", label: "My Contributions" },
-    { path: "/profile", label: "Profile" }
+    {
+      path: "/",
+      label: "Home",
+    },
+
+    {
+      path: "/problems",
+      label: "Problems",
+    },
+
+    {
+      path: "/submissions",
+      label: "Submissions",
+    },
+
+    {
+      path: "/profile",
+      label: "Profile",
+    }
   ];
 
-  const handleCreateProblem = async () => {
-    if (isCreatingDraft) {
-      return;
-    }
-
-    setIsCreatingDraft(true);
-
-    try {
-      const response = await create_draft_problem();
-      const draftId = response?.data?.data?.id;
-
-      if (!draftId) {
-        throw new Error("Draft problem id was not returned.");
-      }
-
-      navigate(`/problem/edit/${draftId}`);
-    } catch (error) {
-      const message = error?.response?.data?.message || error?.message || "Failed to create a draft problem.";
-      if (showToast) {
-        showToast(message);
-      } else {
-        alert(message);
-      }
-    } finally {
-      setIsCreatingDraft(false);
-    }
-  };
+  const visibleNavItems = isLoggedIn
+    ? navItems
+    : navItems.filter((item) => item.path === "/" || item.path === "/problems");
 
   return (
     <nav className="top-nav">
@@ -72,7 +59,7 @@ const NavBar = () => {
             </span>
           </Link>
           <div className="flex space-x-2 items-center">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
@@ -92,16 +79,6 @@ const NavBar = () => {
                 </Link>
               );
             })}
-            {isLoggedIn && (
-              <button
-                onClick={handleCreateProblem}
-                disabled={isCreatingDraft}
-                className="px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-[var(--text-accent)] text-[var(--text-accent)] hover:bg-[var(--text-accent)] hover:text-[var(--bg-primary)] disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ backgroundColor: "transparent" }}
-              >
-                {isCreatingDraft ? "Creating..." : "+ Contribute Problem"}
-              </button>
-            )}
             {!isLoggedIn && (
               <button
                 onClick={() => navigate('/login')}

@@ -1,11 +1,21 @@
-import { clearAuthToken } from "../utils/api";
+import { clearAuthToken }
+from "../utils/api";
 
-// Simple logout helper: removes auth token and user info from localStorage
-export default function logout() {
+export default function logout(navigate, setUser) {
   try {
+    // remove token
     clearAuthToken();
-    localStorage.removeItem('user');
+
+    // clear context
+    setUser(null);
+
+    // redirect
+    navigate("/");
+
   } catch (e) {
-    console.error('Logout error:', e);
+    console.error(
+      "Logout error:",
+      e
+    );
   }
 }
