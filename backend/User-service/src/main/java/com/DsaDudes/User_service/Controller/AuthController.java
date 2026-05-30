@@ -1,14 +1,17 @@
 package com.DsaDudes.User_service.Controller;
 
-import com.DsaDudes.User_service.DTO.UserDTO;
-import com.DsaDudes.User_service.DTO.UserLoginRequest;
-import com.DsaDudes.User_service.Models.User;
-import com.DsaDudes.User_service.Services.UserService;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.DsaDudes.User_service.DTO.UserDTO;
+import com.DsaDudes.User_service.DTO.UserLoginRequest;
+import com.DsaDudes.User_service.Services.UserService;
 
 @RestController
 @RequestMapping("/api/auth")

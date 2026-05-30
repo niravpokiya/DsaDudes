@@ -18,6 +18,8 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const hasFieldError = Boolean(errors.username || errors.password);
+
   const redirectPath = useMemo(() => {
     const from = location.state?.from;
     return from?.pathname ? `${from.pathname}${from.search || ""}${from.hash || ""}` : "/profile";
@@ -81,9 +83,13 @@ const Login = () => {
         );
 
       } catch (error) {
+        if (error?.fieldErrors) {
+          setErrors((previous) => ({ ...previous, ...error.fieldErrors }));
+        }
+
         setSubmitError(
-          error.message ||
-          "Invalid credentials."
+          error?.message ||
+          "Invalid username or password."
         );
       } finally {
         setIsSubmitting(false);
@@ -97,7 +103,8 @@ const Login = () => {
     >
       <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {submitError ? (
-          <div style={{ border: "1px solid var(--error)", background: "var(--error-bg)", color: "var(--error)", borderRadius: "12px", padding: "12px 14px", fontSize: "13px" }} role="alert">
+          <div style={submitBannerStyle} role="alert">
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>Sign in failed</div>
             {submitError}
           </div>
         ) : null}
@@ -115,7 +122,7 @@ const Login = () => {
             onChange={handleChange("username")}
             aria-invalid={Boolean(errors.username)}
             placeholder="Enter username or email"
-            style={inputStyle}
+            style={getInputStyle(Boolean(errors.username))}
           />
           {errors.username ? <p style={errorStyle}>{errors.username}</p> : null}
         </div>
@@ -134,7 +141,7 @@ const Login = () => {
               onChange={handleChange("password")}
               aria-invalid={Boolean(errors.password)}
               placeholder="Enter password"
-              style={passwordInputStyle}
+              style={getPasswordInputStyle(Boolean(errors.password))}
             />
             <button
               type="button"
@@ -179,6 +186,11 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
+const errorInputStyle = {
+  border: "1px solid var(--error)",
+  boxShadow: "0 0 0 3px rgba(239, 68, 68, 0.12)",
+};
+
 const passwordFieldStyle = {
   position: "relative",
 };
@@ -186,6 +198,11 @@ const passwordFieldStyle = {
 const passwordInputStyle = {
   ...inputStyle,
   paddingRight: "48px",
+};
+
+const passwordInputErrorStyle = {
+  ...passwordInputStyle,
+  ...errorInputStyle,
 };
 
 const toggleButtonStyle = {
@@ -221,5 +238,24 @@ const errorStyle = {
   color: "var(--error)",
   fontSize: "12px",
 };
+
+const submitBannerStyle = {
+  border: "1px solid var(--error)",
+  background: "var(--error-bg)",
+  color: "var(--error)",
+  borderRadius: "12px",
+  padding: "12px 14px",
+  fontSize: "13px",
+  lineHeight: 1.5,
+};
+
+const getInputStyle = (hasError) => ({
+  ...inputStyle,
+  ...(hasError ? errorInputStyle : null),
+});
+
+const getPasswordInputStyle = (hasError) => ({
+  ...(hasError ? passwordInputErrorStyle : passwordInputStyle),
+});
 
 export default Login;

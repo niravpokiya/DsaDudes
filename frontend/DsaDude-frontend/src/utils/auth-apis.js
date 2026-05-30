@@ -3,9 +3,10 @@ import { api, clearAuthToken, setAuthToken } from "./api";
 function normalizeError(error) {
   if (error?.response?.data) {
     const data = error.response.data;
-    const message = data.error || data.message || JSON.stringify(data);
+    const message = data.error || data.message || data.detail || JSON.stringify(data);
     const err = new Error(message);
     err.response = error.response;
+    err.fieldErrors = data.fieldErrors || data.errors || null;
     throw err;
   } else {
     throw new Error('Network error');

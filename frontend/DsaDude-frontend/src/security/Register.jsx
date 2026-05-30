@@ -22,6 +22,8 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
+  const hasFormError = Boolean(submitError);
+
   const redirectPath = useMemo(() => {
     const from = location.state?.from;
     return from?.pathname ? `${from.pathname}${from.search || ""}${from.hash || ""}` : "/profile";
@@ -71,7 +73,21 @@ const Register = () => {
 
       navigate(redirectPath, { replace: true });
     } catch (error) {
-      setSubmitError(error.message || "Registration failed.");
+      if (error?.fieldErrors) {
+        setErrors((previous) => ({ ...previous, ...error.fieldErrors }));
+      }
+
+      const message = String(error?.message || "Registration failed.").toLowerCase();
+
+      if (message.includes("email already exists")) {
+        setErrors((previous) => ({ ...previous, email: "Email already exists." }));
+      }
+
+      if (message.includes("username already exists")) {
+        setErrors((previous) => ({ ...previous, username: "Username already exists." }));
+      }
+
+      setSubmitError(error?.message || "Registration failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -84,7 +100,8 @@ const Register = () => {
     >
       <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {submitError ? (
-          <div style={{ border: "1px solid var(--error)", background: "var(--error-bg)", color: "var(--error)", borderRadius: "12px", padding: "12px 14px", fontSize: "13px" }} role="alert">
+          <div style={submitBannerStyle} role="alert">
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>Registration failed</div>
             {submitError}
           </div>
         ) : null}
@@ -99,7 +116,7 @@ const Register = () => {
             onChange={handleChange("username")}
             aria-invalid={Boolean(errors.username)}
             placeholder="your-username"
-            style={inputStyle}
+            style={getInputStyle(Boolean(errors.username))}
           />
           {errors.username ? <p style={errorStyle}>{errors.username}</p> : null}
         </div>
@@ -114,7 +131,7 @@ const Register = () => {
             onChange={handleChange("email")}
             aria-invalid={Boolean(errors.email)}
             placeholder="you@example.com"
-            style={inputStyle}
+            style={getInputStyle(Boolean(errors.email))}
           />
           {errors.email ? <p style={errorStyle}>{errors.email}</p> : null}
         </div>
@@ -130,7 +147,7 @@ const Register = () => {
               onChange={handleChange("password")}
               aria-invalid={Boolean(errors.password)}
               placeholder="Create password"
-              style={passwordInputStyle}
+              style={getPasswordInputStyle(Boolean(errors.password))}
             />
             <button
               type="button"
@@ -156,7 +173,7 @@ const Register = () => {
               onChange={handleChange("confirmPassword")}
               aria-invalid={Boolean(errors.confirmPassword)}
               placeholder="Repeat password"
-              style={passwordInputStyle}
+              style={getPasswordInputStyle(Boolean(errors.confirmPassword))}
             />
             <button
               type="button"
@@ -201,6 +218,11 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
+const errorInputStyle = {
+  border: "1px solid var(--error)",
+  boxShadow: "0 0 0 3px rgba(239, 68, 68, 0.12)",
+};
+
 const passwordFieldStyle = {
   position: "relative",
 };
@@ -208,6 +230,11 @@ const passwordFieldStyle = {
 const passwordInputStyle = {
   ...inputStyle,
   paddingRight: "48px",
+};
+
+const passwordInputErrorStyle = {
+  ...passwordInputStyle,
+  ...errorInputStyle,
 };
 
 const toggleButtonStyle = {
@@ -250,5 +277,24 @@ const errorStyle = {
   color: "var(--error)",
   fontSize: "12px",
 };
+
+const submitBannerStyle = {
+  border: "1px solid var(--error)",
+  background: "var(--error-bg)",
+  color: "var(--error)",
+  borderRadius: "12px",
+  padding: "12px 14px",
+  fontSize: "13px",
+  lineHeight: 1.5,
+};
+
+const getInputStyle = (hasError) => ({
+  ...inputStyle,
+  ...(hasError ? errorInputStyle : null),
+});
+
+const getPasswordInputStyle = (hasError) => ({
+  ...(hasError ? passwordInputErrorStyle : passwordInputStyle),
+});
 
 export default Register;
