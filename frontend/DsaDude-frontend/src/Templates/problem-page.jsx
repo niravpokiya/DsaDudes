@@ -36,6 +36,12 @@ export default function ProblemsPage() {
   const MAX_OUTPUT_LENGTH = 128; // adjust as needed
   const { user } = useContext(UserContext);
 
+  const normalizeJudgeOutput = (value) =>
+    String(value ?? "")
+      .replace(/\r\n/g, "\n")
+      .trim()
+      .replace(/[ \t]+/g, " ");
+
   const mapSubmissionRecord = (submission) => {
     if (!submission || typeof submission !== "object") {
       return null;
@@ -238,8 +244,8 @@ export default function ProblemsPage() {
         outputs.push(data);
 
         // Compare output with flexible normalization
-        const expected = problem.examples[i].output;
-        const actual = data.output || "";
+        const expected = normalizeJudgeOutput(problem.examples[i].output);
+        const actual = normalizeJudgeOutput(data.output);
         console.log(
           `Test case ${i + 1} - Expected: "${expected}", Actual: "${actual}"`,
         );

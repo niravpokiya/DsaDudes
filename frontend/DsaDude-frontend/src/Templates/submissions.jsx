@@ -213,12 +213,12 @@ const SubmissionsList = () => {
               <tbody>
                 {pageItems.map((submission) => {
                   const status = getStatusMeta(submission);
-
+                    console.log(submission)
                   return (
                   <tr
                     key={submission._id}
                     className="submissions-row"
-                    onClick={() => navigate(`/submissions/${submission._id}`)}
+                    onClick={() => navigate(`/submissions/${submission.id}`)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
                         navigate(`/submissions/${submission._id}`);

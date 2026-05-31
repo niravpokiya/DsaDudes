@@ -56,9 +56,19 @@ public class CodeExecutionConsumer {
     private boolean isOutputMatching(String expected, String actual) {
         if (expected == null && actual == null) return true;
         if (expected == null || actual == null) return false;
-        return expected.trim().equals(actual.trim());
-    }
 
+        expected = expected
+                .replace("\r\n", "\n")
+                .replace("\r", "\n")
+                .trim();
+
+        actual = actual
+                .replace("\r\n", "\n")
+                .replace("\r", "\n")
+                .trim();
+
+        return expected.equals(actual);
+    }
     public void RunOnHiddenTestcases(ExecutionJob job) {
         String jobId = job.getJobId();
         redisService.markRunning(jobId, job.getSourceCode(), job.getLanguage(), 0, 0);
@@ -86,11 +96,10 @@ public class CodeExecutionConsumer {
                     // Static Check
                     if (questionDTO.isStaticSolution()) {
                         String expected = readFile(problemDir.resolve(inputFile.getFileName().toString().replace(".in", ".out")));
-                        if (isOutputMatching(expected, result.getOutput())) {
+                        if (isOutputMatching(expected.trim(), result.getOutput())) {
                             result.setStatus("SUCCESS");
                         } else {
                             result.setStatus("WRONG_ANSWER");
-                            result.setError("Expected: " + expected.trim() + ", Got: " + result.getOutput().trim());
                         }
                         return CompletableFuture.completedFuture(result);
                     }
@@ -106,7 +115,7 @@ public class CodeExecutionConsumer {
                 futures.add(future);
             }
 
-            processAllResults(futures, jobId, job);
+            processAllResults(futures, jobId, job, questionDTO.isStaticSolution());
 
         } catch (Exception e) {
             redisService.markError(jobId, "ERROR", e.getMessage(), 0, job.getSourceCode(), job.getLanguage(), 0, 0);
@@ -123,7 +132,7 @@ public class CodeExecutionConsumer {
         return newJob;
     }
 
-    private void processAllResults(List<CompletableFuture<ExecutionResult>> futures, String jobId, ExecutionJob job) {
+    private void processAllResults(List<CompletableFuture<ExecutionResult>> futures, String jobId, ExecutionJob job, boolean staticSolution) {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .thenRun(() -> {
                     int passed = 0;
@@ -135,7 +144,8 @@ public class CodeExecutionConsumer {
                             ExecutionResult res = f.join();
                             totalTime += res.getExecutionTimeMs();
                             String out = res.getOutput().trim();
-                            if ("SUCCESS".equalsIgnoreCase(out) || "PASS".equalsIgnoreCase(out)) {
+                            String status = res.getStatus();
+                            if ("SUCCESS".equalsIgnoreCase(out) || "SUCCESS".equalsIgnoreCase(status) && staticSolution || "PASS".equalsIgnoreCase(out)) {
                                 passed++;
                             } else {
                                 errorMsg.append(res.getError()).append("\n");

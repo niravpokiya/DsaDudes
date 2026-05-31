@@ -1,5 +1,9 @@
+import MDEditor from "@uiw/react-md-editor";
 import ProblemSubmissionsTab from "./problem-submissions-tab";
 import SubmissionResultTab, { getResultTabTitle } from "./submission-result-tab";
+
+import "github-markdown-css/github-markdown-dark.css";
+import "highlight.js/styles/github-dark.css";
 
 export default function ProblemSidebar({
   problem,
@@ -187,112 +191,13 @@ export default function ProblemSidebar({
               >
                 Problem Statement
               </h3>
-              <div style={{ color: "var(--text-secondary)", lineHeight: 1.6, fontSize: "1rem" }}>{problem.description}</div>
+              <div className="markdown-body" data-color-mode="dark">
+                <MDEditor.Markdown
+                  source={problem.description || ""}
+                  className="problem-description-markdown"
+                />
+              </div>
             </div>
-
-            {problem.constraints && (
-              <div style={{ marginBottom: "1rem" }}>
-                <h3
-                  style={{
-                    fontSize: "1.125rem",
-                    fontWeight: "var(--font-weight-semibold)",
-                    color: "var(--text-primary)",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Constraints
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {problem.constraints.map((c, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        background: "var(--bg-accent)",
-                        padding: "0.75rem 1rem",
-                        borderRadius: "var(--radius)",
-                        border: "1px solid var(--border-primary)",
-                        color: "var(--text-secondary)",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      {c}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {problem.examples && problem.examples.length > 0 && (
-              <div>
-                <h3
-                  style={{
-                    fontSize: "1.125rem",
-                    fontWeight: "var(--font-weight-semibold)",
-                    color: "var(--text-primary)",
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  Sample Test Cases
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                  {problem.examples.map((ex, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        background: "var(--bg-secondary)",
-                        border: "1px solid var(--border-secondary)",
-                        borderRadius: "var(--radius-lg)",
-                        padding: "1rem",
-                        borderLeft: "4px solid var(--text-accent)",
-                      }}
-                    >
-                      <div style={{ marginBottom: "0.75rem" }}>
-                        <strong style={{ color: "var(--text-primary)", fontSize: "0.875rem" }}>Input:</strong>
-                        <pre
-                          style={{
-                            background: "var(--bg-tertiary)",
-                            padding: "0.75rem",
-                            borderRadius: "var(--radius)",
-                            marginTop: "0.375rem",
-                            color: "var(--text-primary)",
-                            fontSize: "0.875rem",
-                            lineHeight: 1.5,
-                            whiteSpace: "pre-wrap",
-                            border: "1px solid var(--border-primary)",
-                          }}
-                        >
-                          {ex.input}
-                        </pre>
-                      </div>
-                      <div style={{ marginBottom: "0.75rem" }}>
-                        <strong style={{ color: "var(--text-primary)", fontSize: "0.875rem" }}>Output:</strong>
-                        <pre
-                          style={{
-                            background: "var(--bg-tertiary)",
-                            padding: "0.75rem",
-                            borderRadius: "var(--radius)",
-                            marginTop: "0.375rem",
-                            color: "var(--success)",
-                            fontSize: "0.875rem",
-                            lineHeight: 1.5,
-                            whiteSpace: "pre-wrap",
-                            border: "1px solid var(--success)",
-                          }}
-                        >
-                          {ex.output}
-                        </pre>
-                      </div>
-                      {ex.explanation && (
-                        <div>
-                          <strong style={{ color: "var(--text-primary)", fontSize: "0.875rem" }}>Explanation:</strong>
-                          <p style={{ color: "var(--text-secondary)", marginTop: "0.375rem", fontSize: "0.875rem", lineHeight: 1.5 }}>{ex.explanation}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </>
         )}
 
