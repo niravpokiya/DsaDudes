@@ -57,6 +57,22 @@ const SubmissionDetail = () => {
     return submission.verdict || 'Unknown';
   };
 
+  const getShortFailureText = (submission) => {
+    if (submission.verdict === 'WRONG_ANSWER') return 'Wrong Answer';
+    if (submission.verdict === 'TIME_LIMIT_EXCEEDED') return 'Time Limit Exceeded';
+    if (submission.verdict === 'RUNTIME_ERROR') return 'Runtime Error';
+    if (submission.errorMessage) return 'Compilation Error';
+    return 'Submission failed';
+  };
+
+  const getTestcaseCounts = (submission) => {
+    const total = Number(submission.totalTestcases ?? 0);
+    const passed = Number(submission.passedTestcases ?? 0);
+    const failed = total > 0 ? Math.max(total - passed, 0) : Number(submission.failedTestcases ?? 0);
+
+    return { passed, failed, total };
+  };
+
   const getVerdictColor = (verdict) => {
     const colors = {
       'ACCEPTED': '#10b981',
@@ -155,6 +171,7 @@ const SubmissionDetail = () => {
 
   const codeLines = submission.sourceCode ? submission.sourceCode.split('\n') : [];
   const displayLines = showFullCode ? codeLines : codeLines.slice(0, 50);
+  const testcaseCounts = getTestcaseCounts(submission);
 
   return (
     <div className="sd-page">
@@ -201,45 +218,40 @@ const SubmissionDetail = () => {
               <div className="sd-results-grid">
                 <div className="sd-result-box passed">
                   <div className="sd-result-label">✓ PASSED</div>
-                  <div className="sd-result-value">{submission.passedTestcases || 0}</div>
+                  <div className="sd-result-value">{testcaseCounts.passed}</div>
                 </div>
                 <div className="sd-result-box failed">
                   <div className="sd-result-label">✗ FAILED</div>
-                  <div className="sd-result-value">{submission.failedTestcases || 0}</div>
+                  <div className="sd-result-value">{testcaseCounts.failed}</div>
                 </div>
                 <div className="sd-result-box total">
                   <div className="sd-result-label">TOTAL</div>
-                  <div className="sd-result-value">{submission.totalTestcases}</div>
+                  <div className="sd-result-value">{testcaseCounts.total}</div>
                 </div>
               </div>
-              {submission.passedTestcases > 0 && submission.totalTestcases > 0 && (
+              {testcaseCounts.passed > 0 && testcaseCounts.total > 0 && (
                 <div style={{ marginTop: '1.5rem' }}>
                   <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Success Rate</div>
                   <div style={{ height: '0.5rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '0.25rem', overflow: 'hidden' }}>
                     <div style={{
-                      width: `${(submission.passedTestcases / submission.totalTestcases) * 100}%`,
+                      width: `${(testcaseCounts.passed / testcaseCounts.total) * 100}%`,
                       height: '100%',
                       backgroundColor: getVerdictColor(submission.verdict),
                       transition: 'width 0.3s ease'
                     }} />
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                    {((submission.passedTestcases / submission.totalTestcases) * 100).toFixed(1)}% passed
+                    {((testcaseCounts.passed / testcaseCounts.total) * 100).toFixed(1)}% passed
                   </div>
                 </div>
               )}
             </>
           )}
 
-          {submission.errorMessage && submission.errorMessage.trim() && (
-            <>
-              <h3 className="sd-section-title">⚠️ Error Details</h3>
-              <div className="sd-error-box">
-                <code style={{ fontSize: '0.85rem', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {submission.errorMessage}
-                </code>
-              </div>
-            </>
+          {(submission.verdict === 'WRONG_ANSWER' || submission.errorMessage) && (
+            <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '0.375rem', fontSize: '0.875rem' }}>
+              <strong>Result:</strong> <span>{getShortFailureText(submission)}</span>
+            </div>
           )}
 
           {submission.status && (

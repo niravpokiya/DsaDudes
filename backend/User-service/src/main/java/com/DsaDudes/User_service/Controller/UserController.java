@@ -17,6 +17,9 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+
+//    ===============================   PUBLIC ENDPOINTS =======================================
+
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
