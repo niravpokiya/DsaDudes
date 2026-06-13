@@ -38,7 +38,7 @@ const AdminUsers = () => {
     <section className="admin-card" style={{ padding: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", alignItems: "flex-start", marginBottom: "1rem" }}>
         <div>
-          <div style={{ color: "#ffc457", textTransform: "uppercase", letterSpacing: "0.2em", fontSize: "0.72rem" }}>Users</div>
+          <div className="page-eyebrow">Users</div>
           <h2 className="admin-sectionTitle">System users</h2>
           <p className="admin-sectionText">Registered accounts visible to the admin console. Passwords are never exposed.</p>
         </div>
@@ -77,16 +77,16 @@ const AdminUsers = () => {
                   <td>{user.id}</td>
                   <td>
                     <div style={{ fontWeight: 700 }}>{user.firstName || user.username}</div>
-                    <div style={{ color: "rgba(232,237,247,0.58)", fontSize: "0.84rem" }}>@{user.username}</div>
+                    <div style={{ color: "var(--text-muted)", fontSize: "0.84rem" }}>@{user.username}</div>
                   </td>
                   <td><span className={roleClass(user.role)}>{String(user.role).toUpperCase()}</span></td>
                   <td>
                     <div>{user.email || "-"}</div>
-                    <div style={{ color: "rgba(232,237,247,0.58)", fontSize: "0.84rem" }}>{user.phoneVerified ? "Phone verified" : "Phone unverified"}</div>
+                    <div style={{ color: "var(--text-muted)", fontSize: "0.84rem" }}>{user.phoneVerified ? "Phone verified" : "Phone unverified"}</div>
                   </td>
                   <td>
                     <div>{user.totalSubmissions || 0} submissions</div>
-                    <div style={{ color: "rgba(232,237,247,0.58)", fontSize: "0.84rem" }}>{user.solvedCount || 0} solved</div>
+                    <div style={{ color: "var(--text-muted)", fontSize: "0.84rem" }}>{user.solvedCount || 0} solved</div>
                   </td>
                   <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}</td>
                 </tr>

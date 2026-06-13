@@ -18,7 +18,7 @@ const ProfileHeader = ({ user }) => {
   return (
     <div className="flex items-center gap-5 p-2">
       <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border border-zinc-700/50 shadow-inner"
-           style={{ background: 'linear-gradient(135deg, #2b2b3c, #1e1e2e)', color: '#ffb020' }}>
+           style={{ background: 'linear-gradient(135deg, var(--surface-indigo), var(--surface-blue))', color: 'var(--accent-primary)' }}>
         {displayName?.charAt(0)?.toUpperCase() || 'U'}
       </div>
       

@@ -2,12 +2,14 @@ import { Editor } from '@monaco-editor/react';
 import { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../Context/userContext';
+import { useTheme } from '../Context/themeContext';
 import { getSubmissionById } from '../Helpers/getSubmissions';
 import './submissionDetail.css';
 
 const SubmissionDetail = () => {
   const { submissionId } = useParams();
   const { user } = useContext(UserContext);
+  const { currentMode } = useTheme();
   const navigate = useNavigate();
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,12 +77,12 @@ const SubmissionDetail = () => {
 
   const getVerdictColor = (verdict) => {
     const colors = {
-      'ACCEPTED': '#10b981',
-      'WRONG_ANSWER': '#ef4444',
-      'TIME_LIMIT_EXCEEDED': '#f97316',
-      'RUNTIME_ERROR': '#ef4444',
+      'ACCEPTED': 'var(--success)',
+      'WRONG_ANSWER': 'var(--error)',
+      'TIME_LIMIT_EXCEEDED': 'var(--warning)',
+      'RUNTIME_ERROR': 'var(--error)',
     };
-    return colors[verdict] || '#6b7280';
+    return colors[verdict] || 'var(--text-muted)';
   };
 
   const formatDate = (timestamp) => {
@@ -276,7 +278,7 @@ const SubmissionDetail = () => {
               height="400px"
               language={getLanguageMonaco(submission.language)}
               value={submission.sourceCode || ''}
-              theme="vs-dark"
+              theme={currentMode === 'dark' ? 'vs-dark' : 'light'}
               options={{
                 readOnly: true,
                 minimap: { enabled: false },

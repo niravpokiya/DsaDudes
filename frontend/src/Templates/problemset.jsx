@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Filter, Search } from "lucide-react";
 import { get_published_problems } from "../utils/problem-apis";
 
 const ProblemsList = () => {
   const [problems, setProblems] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const problemsPerPage = 30;
+  const [query, setQuery] = useState("");
+  const [difficulty, setDifficulty] = useState("ALL");
+  const [topic, setTopic] = useState("ALL");
+  const problemsPerPage = 20;
 
   useEffect(() => {
     const fetchProblems = async () => {
       try {
         const response = await get_published_problems();
-  
-        setProblems(response.data.data);
+        setProblems(response.data.data || []);
       } catch (err) {
         console.error(err);
         alert("Failed to fetch problems.");
@@ -22,18 +25,16 @@ const ProblemsList = () => {
     fetchProblems();
   }, []);
 
-  // Pagination logic
-  const indexOfLastProblem = currentPage * problemsPerPage;
-  const indexOfFirstProblem = indexOfLastProblem - problemsPerPage;
-  const currentProblems = problems.slice(
-    indexOfFirstProblem,
-    indexOfLastProblem,
-  );
+  const generateSlug = (title) => {
+    if (!title) return "";
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  };
 
-  const totalPages = Math.ceil(problems.length / problemsPerPage);
-
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
+  const getDifficultyColor = (value) => {
+    switch (value) {
       case "EASY":
         return "difficulty-easy";
       case "MEDIUM":
@@ -41,117 +42,127 @@ const ProblemsList = () => {
       case "HARD":
         return "difficulty-hard";
       default:
-        return "difficulty-easy";
+        return "pill";
     }
   };
 
-  const generateSlug = (title) => {
-    if (!title) {
-      return "";
-    }
+  const topicOptions = useMemo(() => {
+    const allTopics = new Set();
+    problems.forEach((problem) => {
+      const topics = problem.topic ?? problem.tags ?? [];
+      topics.forEach((entry) => allTopics.add(String(entry)));
+    });
+    return Array.from(allTopics).sort();
+  }, [problems]);
 
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-") // replace non-alphanumeric with -
-      .replace(/^-+|-+$/g, ""); // trim leading/trailing -
-  };
+  const filteredProblems = useMemo(() => {
+    const lowerQuery = query.trim().toLowerCase();
+    return problems.filter((problem) => {
+      const topics = problem.topic ?? problem.tags ?? [];
+      const titleMatch = !lowerQuery || problem.title?.toLowerCase().includes(lowerQuery);
+      const difficultyMatch = difficulty === "ALL" || problem.difficulty === difficulty;
+      const topicMatch = topic === "ALL" || topics.map(String).includes(topic);
+      return titleMatch && difficultyMatch && topicMatch;
+    });
+  }, [problems, query, difficulty, topic]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, difficulty, topic]);
+
+  const indexOfLastProblem = currentPage * problemsPerPage;
+  const indexOfFirstProblem = indexOfLastProblem - problemsPerPage;
+  const currentProblems = filteredProblems.slice(indexOfFirstProblem, indexOfLastProblem);
+  const totalPages = Math.max(1, Math.ceil(filteredProblems.length / problemsPerPage));
+
   return (
     <div className="page-inner">
-      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <h1
-          style={{
-            fontSize: "2.5rem",
-            fontWeight: "var(--font-weight-bold)",
-            background:
-              "linear-gradient(135deg, var(--text-primary), var(--text-accent))",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Problem List
-        </h1>
-        <p className="text-secondary" style={{ fontSize: "1.125rem" }}>
-          Practice with curated problems and improve your coding skills
-        </p>
-      </div>
+      <section className="page-header">
+        <div>
+          <div className="page-eyebrow">Problem library</div>
+          <h1>Practice without the clutter.</h1>
+          <p className="page-subtitle">
+            Search curated DSA problems, narrow by difficulty or topic, and jump
+            into a clean editor experience.
+          </p>
+        </div>
+        <div className="saas-card saas-card--blue" style={{ minWidth: 220, padding: 20 }}>
+          <div className="stat-card__label">Published problems</div>
+          <div className="stat-card__value" style={{ fontSize: 34 }}>{filteredProblems.length}</div>
+        </div>
+      </section>
 
-      {/* Enhanced Table Container */}
-      <div className="problems-card animate-fadeInUp" style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <div className="problem-list modern-scrollbar" style={{ width: "100%" }}>
-          <table className="problems-table" style={{ width: "100%", tableLayout: "fixed" }}>
+      <section className="problems-toolbar">
+        <label style={{ position: "relative" }}>
+          <Search size={18} style={{ position: "absolute", left: 14, top: 13, color: "var(--text-muted)" }} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search problems"
+            style={{ paddingLeft: 42 }}
+          />
+        </label>
+
+        <label style={{ position: "relative" }}>
+          <Filter size={18} style={{ position: "absolute", left: 14, top: 13, color: "var(--text-muted)" }} />
+          <select value={difficulty} onChange={(event) => setDifficulty(event.target.value)} style={{ paddingLeft: 42 }}>
+            <option value="ALL">All difficulties</option>
+            <option value="EASY">Easy</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HARD">Hard</option>
+          </select>
+        </label>
+
+        <select value={topic} onChange={(event) => setTopic(event.target.value)}>
+          <option value="ALL">All topics</option>
+          {topicOptions.map((entry) => (
+            <option key={entry} value={entry}>
+              {entry.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
+      </section>
+
+      <section className="problems-card animate-fadeInUp">
+        <div className="problem-list modern-scrollbar">
+          <table className="problems-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Title</th>
-                <th>Difficulty</th>
-                <th>Tags</th>
+                <th style={{ width: 72 }}>#</th>
+                <th>Problem</th>
+                <th style={{ width: 150 }}>Difficulty</th>
+                <th>Topics</th>
               </tr>
             </thead>
             <tbody>
               {currentProblems.map((problem, idx) => {
                 const topics = problem.topic ?? problem.tags ?? [];
-
                 return (
-                  <tr key={problem.id}>
-                    <td
-                      style={{
-                        fontWeight: "var(--font-weight-medium)",
-                        color: "var(--text-secondary)",
-                        textAlign: "center",
-                      }}
-                    >
-                      {indexOfFirstProblem + idx + 1}
-                    </td>
+                  <tr key={problem.id || problem.title}>
+                    <td>{indexOfFirstProblem + idx + 1}</td>
                     <td>
-                      <Link
-                        to={`/problems/${generateSlug(problem.title)}`}
-                        style={{
-                          color: "var(--text-accent)",
-                          textDecoration: "none",
-                          fontWeight: "var(--font-weight-medium)",
-                          fontSize: "1rem",
-                        }}
-                      >
+                      <Link to={`/problems/${generateSlug(problem.title)}`} className="problem-title-link">
                         {problem.title}
                       </Link>
+                      <div style={{ marginTop: 5, color: "var(--text-muted)", fontSize: 13 }}>
+                        Solve, run samples, and submit to judge
+                      </div>
                     </td>
                     <td>
-                      <span
-                        className={`output-badge ${getDifficultyColor(problem.difficulty)}`}
-                      >
+                      <span className={getDifficultyColor(problem.difficulty)}>
                         {problem.difficulty}
                       </span>
                     </td>
                     <td>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "0.5rem",
-                        }}
-                      >
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                         {topics.length > 0 ? (
-                          topics.map((tag, tagIdx) => (
-                            <span
-                              key={tagIdx}
-                              style={{
-                                background: "var(--bg-accent)",
-                                color: "var(--text-secondary)",
-                                padding: "0.25rem 0.75rem",
-                                borderRadius: "var(--radius)",
-                                fontSize: "0.75rem",
-                                fontWeight: "var(--font-weight-medium)",
-                                border: "1px solid var(--border-primary)",
-                                letterSpacing: "0.04em",
-                              }}
-                            >
+                          topics.slice(0, 4).map((tag, tagIdx) => (
+                            <span key={`${tag}-${tagIdx}`} className="tag">
                               {String(tag).replace(/_/g, " ")}
                             </span>
                           ))
                         ) : (
-                          <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                          <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
                             No tags
                           </span>
                         )}
@@ -163,90 +174,29 @@ const ProblemsList = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* Enhanced Pagination */}
       <div className="pagination">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
+        <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
           Prev
         </button>
 
         {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
           let pageNum;
-          if (totalPages <= 7) {
-            pageNum = i + 1;
-          } else if (currentPage <= 4) {
-            pageNum = i + 1;
-          } else if (currentPage >= totalPages - 3) {
-            pageNum = totalPages - 6 + i;
-          } else {
-            pageNum = currentPage - 3 + i;
-          }
+          if (totalPages <= 7) pageNum = i + 1;
+          else if (currentPage <= 4) pageNum = i + 1;
+          else if (currentPage >= totalPages - 3) pageNum = totalPages - 6 + i;
+          else pageNum = currentPage - 3 + i;
+
           return (
-            <button
-              key={pageNum}
-              className={currentPage === pageNum ? "active" : ""}
-              onClick={() => setCurrentPage(pageNum)}
-              style={{
-                background:
-                  currentPage === pageNum
-                    ? "var(--text-accent)"
-                    : "var(--bg-tertiary)",
-                color:
-                  currentPage === pageNum
-                    ? "var(--bg-primary)"
-                    : "var(--text-primary)",
-                borderColor:
-                  currentPage === pageNum
-                    ? "var(--text-accent)"
-                    : "var(--border-primary)",
-              }}
-            >
+            <button key={pageNum} className={currentPage === pageNum ? "active" : ""} onClick={() => setCurrentPage(pageNum)}>
               {pageNum}
             </button>
           );
         })}
 
-        <button
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
-          disabled={currentPage === totalPages}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-          }}
-        >
+        <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
           Next
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
         </button>
       </div>
     </div>

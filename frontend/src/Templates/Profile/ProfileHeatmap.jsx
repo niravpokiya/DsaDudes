@@ -29,11 +29,11 @@ function levelForCount(count) {
 
 function intensityColor(level) {
   switch (level) {
-    case 1: return "rgba(255, 161, 22, 0.25)";
-    case 2: return "rgba(255, 161, 22, 0.45)";
-    case 3: return "rgba(255, 161, 22, 0.65)";
-    case 4: return "rgba(255, 161, 22, 0.9)";
-    default: return "rgba(255, 255, 255, 0.04)";
+    case 1: return "color-mix(in srgb, var(--accent-primary) 24%, var(--surface-soft))";
+    case 2: return "color-mix(in srgb, var(--accent-primary) 48%, var(--surface-soft))";
+    case 3: return "color-mix(in srgb, var(--accent-primary) 74%, var(--surface-soft))";
+    case 4: return "var(--accent-primary)";
+    default: return "var(--surface-soft)";
   }
 }
 
@@ -109,7 +109,7 @@ const ProfileHeatmap = ({ userId }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-40">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
@@ -118,8 +118,8 @@ const ProfileHeatmap = ({ userId }) => {
     <div ref={containerRef} style={{ position: "relative" }}>
       {/* Dynamic Heatmap Info Bar */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-zinc-400">Activity Overview</span>
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
+        <span className="text-sm font-semibold text-slate-600">Activity overview</span>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
           <span>Less</span>
           <div className="flex gap-1">
             {[0, 1, 2, 3, 4].map((lvl) => (
@@ -150,7 +150,7 @@ const ProfileHeatmap = ({ userId }) => {
                   className="w-[11px] h-[11px] rounded-sm transition-colors duration-150"
                   style={{
                     background: intensityColor(lvl),
-                    border: "1px solid rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(15,23,42,0.04)",
                   }}
                 />
               );
@@ -162,7 +162,7 @@ const ProfileHeatmap = ({ userId }) => {
       {tooltip.visible && (
         <div
           ref={tooltipRef}
-          className="pointer-events-none text-xs px-2 py-1 rounded-md shadow-xl bg-zinc-900 border border-zinc-800 text-zinc-200"
+          className="pointer-events-none text-xs px-2 py-1 rounded-md shadow-xl bg-slate-950 border border-slate-800 text-slate-100"
           style={{
             position: "absolute",
             left: tooltip.x,

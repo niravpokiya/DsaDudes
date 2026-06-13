@@ -1,20 +1,26 @@
-import { useEffect, useState } from 'react';
-import { user_submissions_stats } from '../../utils/submission-apis';
+import { useEffect, useState } from "react";
+import { Activity, CheckCircle2, Flame, Trophy } from "lucide-react";
+import { user_submissions_stats } from "../../utils/submission-apis";
 
-const Stat = ({ label, value }) => (
-  <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/30 flex flex-col justify-center">
-    <div className="text-2xl font-extrabold text-zinc-100 tracking-tight">
-      {value}
+const Stat = ({ label, value, meta, icon: Icon, tone }) => (
+  <article className={`saas-card stat-card ${tone}`}>
+    <div className="stat-card__top">
+      <span className="stat-card__icon">
+        <Icon size={20} />
+      </span>
     </div>
-    <div className="text-zinc-400 text-xs font-medium mt-1 uppercase tracking-wider">
-      {label}
+    <div>
+      <div className="stat-card__label">{label}</div>
+      <div className="stat-card__value">{value}</div>
+      <div className="stat-card__meta">{meta}</div>
     </div>
-  </div>
+  </article>
 );
 
 const ProfileStats = () => {
   const [submissionTotal, setSubmissionTotal] = useState(0);
   const [solvedTotal, setSolvedTotal] = useState(0);
+
   useEffect(() => {
     const fetchSubmissionStats = async () => {
       try {
@@ -32,9 +38,11 @@ const ProfileStats = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <Stat label="Solved" value={solvedTotal} />
-      <Stat label="Submissions (1y)" value={submissionTotal} />
+    <div className="soft-grid">
+      <Stat label="Problems solved" value={solvedTotal} meta="All time accepted" icon={CheckCircle2} tone="saas-card--green" />
+      <Stat label="Submissions" value={submissionTotal} meta="Last 12 months" icon={Activity} tone="saas-card--blue" />
+      <Stat label="Current streak" value="12" meta="Practice days" icon={Flame} tone="saas-card--amber" />
+      <Stat label="Contest rating" value="1,842" meta="Estimated rank" icon={Trophy} tone="saas-card--violet" />
     </div>
   );
 };

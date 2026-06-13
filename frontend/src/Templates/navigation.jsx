@@ -1,5 +1,14 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  BarChart3,
+  BookOpenCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
+  FileClock,
+  LogIn,
+  UserRound,
+} from "lucide-react";
 import { UserContext } from "../Context/userContext";
 import ThemeSwitcher from "../Components/ThemeSwitcher";
 
@@ -8,92 +17,89 @@ const NavBar = () => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const isLoggedIn = Boolean(user);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("dsaChampSidebarCollapsed") === "true");
+
+  useEffect(() => {
+    localStorage.setItem("dsaChampSidebarCollapsed", String(collapsed));
+  }, [collapsed]);
+
   const navItems = [
-    {
-      path: "/",
-      label: "Home",
-    },
-
-    {
-      path: "/problems",
-      label: "Problems",
-    },
-
-    {
-      path: "/submissions",
-      label: "Submissions",
-    },
-
-    {
-      path: "/profile",
-      label: "Profile",
-    }
+    { path: "/", label: "Dashboard", icon: BarChart3 },
+    { path: "/problems", label: "Problems", icon: BookOpenCheck },
+    { path: "/submissions", label: "Submissions", icon: FileClock, private: true },
+    { path: "/profile", label: "Profile", icon: UserRound, private: true },
   ];
 
-  const visibleNavItems = isLoggedIn
-    ? navItems
-    : navItems.filter((item) => item.path === "/" || item.path === "/problems");
+  const visibleNavItems = navItems.filter((item) => !item.private || isLoggedIn);
+  const displayName = user?.firstName || user?.username || "Guest";
 
   return (
-    <nav className="top-nav">
-      <div className="container">
-        <div className="flex justify-between items-center h-12">
-          <Link
-            to="/"
-            className="brand-link flex items-center gap-3 rounded-xl px-2 py-1.5 text-primary hover:bg-[var(--bg-accent)] transition-all duration-200"
-            style={{ textDecoration: "none" }}
-          >
-            <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] shadow-sm">
-              <img
-                src="/DsaChamp-logo.png"
-                alt="DsaChamp logo"
-                className="h-full w-full object-cover"
-              />
+    <aside className={`app-sidebar ${collapsed ? "app-sidebar--collapsed" : ""}`}>
+      <div className="app-sidebar__top">
+      <Link to="/" className="app-brand" aria-label="DSAChamp dashboard">
+        <span className="app-brand__mark">
+          <img src="/DsaChamp-logo.png" alt="DSAChamp logo" />
+        </span>
+        <span>
+          <span className="app-brand__name">DSAChamp</span>
+          <span className="app-brand__tagline">Developer practice lab</span>
+        </span>
+      </Link>
+      <button
+        type="button"
+        className="sidebar-collapse"
+        onClick={() => setCollapsed((value) => !value)}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+      </button>
+      </div>
+
+      <nav className="sidebar-nav" aria-label="Primary navigation">
+        {visibleNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            item.path === "/"
+              ? location.pathname === "/"
+              : location.pathname.startsWith(item.path);
+
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`sidebar-nav__item ${isActive ? "sidebar-nav__item--active" : ""}`}
+              title={collapsed ? item.label : undefined}
+            >
+              <Icon size={18} strokeWidth={2.2} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="sidebar-footer">
+        <ThemeSwitcher />
+        {isLoggedIn ? (
+          <Link to="/profile" className="sidebar-user">
+            <span className="sidebar-user__avatar">
+              {displayName.charAt(0).toUpperCase()}
             </span>
-            <span className="flex flex-col leading-tight">
-              <span className="text-base font-bold tracking-wide text-[var(--text-primary)]">
-                DsaChamp
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-muted)]">
-                Code. Submit. Level up.
-              </span>
+            <span>
+              <strong style={{ display: "block", color: "var(--text-primary)" }}>
+                {displayName}
+              </strong>
+              <span>@{user?.username || "coder"}</span>
             </span>
           </Link>
-          <div className="flex space-x-2 items-center">
-            {visibleNavItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-accent text-primary'
-                      : 'text-secondary hover:text-primary hover:bg-accent'
-                  }`}
-                  style={{
-                    backgroundColor: isActive ? 'var(--text-accent)' : 'transparent',
-                    color: isActive ? 'var(--bg-primary)' : 'var(--text-secondary)'
-                  }}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-            <ThemeSwitcher />
-            {!isLoggedIn && (
-              <button
-                onClick={() => navigate('/login')}
-                className="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-secondary hover:text-primary hover:bg-accent"
-                style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
-              >
-                Sign in
-              </button>
-            )}
-          </div>
-        </div>
+        ) : (
+          <button className="btn-primary" onClick={() => navigate("/login")}>
+            <LogIn size={16} />
+            <span>Sign in</span>
+          </button>
+        )}
       </div>
-    </nav>
+    </aside>
   );
 };
 

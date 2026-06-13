@@ -1,120 +1,112 @@
 import { useContext } from "react";
+import { Award, Clock3, LogOut, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { UserContext } from "../Context/userContext";
+import logout from "../security/logout";
 import ProfileAbout from "./Profile/ProfileAbout";
 import ProfileDifficultyGraph from "./Profile/ProfileDifficultyGraph";
-import ProfileHeader from "./Profile/ProfileHeader";
 import ProfileHeatmap from "./Profile/ProfileHeatmap";
 import ProfileStats from "./Profile/ProfileStats";
 
 function Profile() {
-  const { user, loading } = useContext(UserContext);
+  const { user, loading, setUser } = useContext(UserContext);
+  const navigate = useNavigate();
+  const displayName = user?.firstName || user?.username || "Anonymous Coder";
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] text-slate-400 font-medium">
-        <span className="animate-pulse">Loading your profile...</span>
+      <div className="page-inner" style={{ minHeight: "60vh", justifyContent: "center", alignItems: "center" }}>
+        <div className="saas-card">Loading your profile...</div>
       </div>
     );
   }
 
-  // Injecting inline structural CSS variables/styles to match modern design specs
-  const containerStyle = {
-    maxWidth: "1280px",
-    margin: "0 auto",
-    padding: "2rem 1.5rem",
-    color: "#e4e4e7",
-  };
-
-  const dashboardGridStyle = {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 2.3fr) minmax(0, 1fr)",
-    gap: "2rem",
-  };
-
-  const cardStyle = {
-    backgroundColor: "#1e1e2e",
-    borderRadius: "14px",
-    padding: "1.75rem",
-    border: "1px solid #2d2d3d",
-    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={dashboardGridStyle} className="responsive-profile-grid">
-        {/* Left Column: Main Content */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
-          
-          {/* Header Area */}
-          <div style={{ paddingBottom: "0.5rem" }}>
-            <ProfileHeader user={user} />
-          </div>
-
-          {/* Progress Section */}
-          <div style={cardStyle}>
-            <h3 
-              style={{ 
-                fontSize: "1.15rem", 
-                fontWeight: "600", 
-                letterSpacing: "-0.01em",
-                color: "#f4f4f5",
-                marginBottom: "1.25rem" 
-              }}
-            >
-              Progress Overview
-            </h3>
-            <ProfileStats user={user} />
-          </div>
-
-          <div style={cardStyle}>
-            <h3 
-              style={{ 
-                fontSize: "1.15rem", 
-                fontWeight: "600", 
-                letterSpacing: "-0.01em",
-                color: "#f4f4f5",
-                marginBottom: "1.25rem" 
-              }}
-            >
-              Difficulty Breakdown
-            </h3>
-            <ProfileDifficultyGraph />
-          </div>
-
-          {/* Heatmap Section */}
-          <div style={cardStyle}>
-            <h3 
-              style={{ 
-                fontSize: "1.15rem", 
-                fontWeight: "600", 
-                letterSpacing: "-0.01em",
-                color: "#f4f4f5",
-                marginBottom: "1.25rem" 
-              }}
-            >
-              Submissions in the past year
-            </h3>
-            <ProfileHeatmap userId={user?.id} />
+    <div className="page-inner">
+      <section className="saas-card profile-hero">
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div className="profile-avatar">{displayName.charAt(0).toUpperCase()}</div>
+          <div>
+            <div className="page-eyebrow">Developer profile</div>
+            <h1>{displayName}</h1>
+            <p className="page-subtitle" style={{ marginTop: 8 }}>
+              @{user?.username || "username"} · {user?.role || "USER"}
+            </p>
           </div>
         </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button className="btn-secondary" onClick={() => alert("Edit Profile coming soon")}>
+            <Settings size={16} />
+            Edit
+          </button>
+          <button className="btn-ghost" onClick={() => logout(navigate, setUser)}>
+            <LogOut size={16} />
+            Logout
+          </button>
+        </div>
+      </section>
 
-        {/* Right Column: Sidebar Meta Information */}
-        <div>
-          <div style={cardStyle}>
+      <section>
+        <ProfileStats user={user} />
+      </section>
+
+      <section className="profile-grid">
+        <div style={{ display: "grid", gap: 24 }}>
+          <article className="saas-card">
+            <div className="page-eyebrow">Activity graph</div>
+            <h2>Submissions in the past year</h2>
+            <div style={{ marginTop: 22 }}>
+              <ProfileHeatmap userId={user?.id} />
+            </div>
+          </article>
+
+          <article className="saas-card">
+            <div className="page-eyebrow">Difficulty mix</div>
+            <h2>Problem solving breakdown</h2>
+            <div style={{ marginTop: 22 }}>
+              <ProfileDifficultyGraph />
+            </div>
+          </article>
+        </div>
+
+        <aside style={{ display: "grid", gap: 24, alignContent: "start" }}>
+          <article className="saas-card">
+            <div className="page-eyebrow">Achievements</div>
+            <div style={{ display: "grid", gap: 14, marginTop: 12 }}>
+              {["Consistent Coder", "Graph Explorer", "Fast Submitter"].map((badge) => (
+                <div key={badge} className="metadata-item" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <span className="stat-card__icon">
+                    <Award size={18} />
+                  </span>
+                  <div>
+                    <strong>{badge}</strong>
+                    <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Unlocked through regular practice</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="saas-card">
+            <div className="page-eyebrow">Recent submissions</div>
+            <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+              {["Two Sum", "Valid Parentheses", "Merge Intervals"].map((item) => (
+                <div key={item} className="metadata-item" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                  <div>
+                    <strong>{item}</strong>
+                    <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Accepted · C++</p>
+                  </div>
+                  <Clock3 size={16} color="var(--text-muted)" />
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="saas-card">
             <ProfileAbout user={user} />
-          </div>
-        </div>
-      </div>
-
-      {/* Basic Responsive Utility Rule */}
-      <style>{`
-        @media (max-width: 968px) {
-          .responsive-profile-grid {
-            grid-template-columns: 1fr !important;
-            gap: 1.5rem !important;
-          }
-        }
-      `}</style>
+          </article>
+        </aside>
+      </section>
     </div>
   );
 }

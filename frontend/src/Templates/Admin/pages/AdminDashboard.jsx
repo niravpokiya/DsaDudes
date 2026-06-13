@@ -28,7 +28,7 @@ const AdminDashboard = () => {
     { label: "System users", value: loadingUsers ? "..." : String(userCount), meta: "Loaded from admin API" },
     { label: "Problem authoring", value: "Live", meta: "Draft creation + editor" },
     { label: "Access model", value: "Strict", meta: "ADMIN only" },
-    { label: "Surface", value: "Separate", meta: "No public nav link" },
+    { label: "Surface", value: "Unified", meta: "Same DSAChamp system" },
   ];
 
   const actions = [
@@ -42,12 +42,12 @@ const AdminDashboard = () => {
       <section className="admin-card admin-card--hero">
         <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", alignItems: "flex-start" }}>
           <div>
-            <div style={{ color: "#ffc457", textTransform: "uppercase", letterSpacing: "0.2em", fontSize: "0.72rem" }}>Admin workspace</div>
+            <div className="page-eyebrow">Admin workspace</div>
             <h2 className="admin-sectionTitle" style={{ fontSize: "2rem", marginTop: "0.35rem" }}>
               Welcome back, {user?.firstName || user?.username || "Admin"}
             </h2>
             <p className="admin-sectionText" style={{ maxWidth: "720px" }}>
-              This panel is isolated from the public app. It uses its own navigation, its own route tree, and its own visual language for administrative work.
+              This panel uses the same DSAChamp design system while keeping administrative routes and permissions isolated.
             </p>
           </div>
 
@@ -75,7 +75,7 @@ const AdminDashboard = () => {
           {actions.map((action) => (
             <Link key={action.to} to={action.to} className="admin-card" style={{ padding: "1rem", textDecoration: "none", color: "inherit" }}>
               <div style={{ fontWeight: 800, marginBottom: "0.4rem" }}>{action.title}</div>
-              <div style={{ color: "rgba(232,237,247,0.66)", lineHeight: 1.65 }}>{action.description}</div>
+              <div style={{ color: "var(--text-secondary)", lineHeight: 1.65 }}>{action.description}</div>
             </Link>
           ))}
         </div>

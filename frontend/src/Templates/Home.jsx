@@ -1,175 +1,183 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  Flame,
+  Globe2,
+  Medal,
+  Plus,
+  Sparkles,
+  Target,
+  Trophy,
+} from "lucide-react";
+
+const stats = [
+  {
+    label: "Problems Solved",
+    value: "128",
+    meta: "+14 this month",
+    icon: Target,
+    tone: "saas-card--blue",
+  },
+  {
+    label: "Current Streak",
+    value: "12",
+    meta: "days active",
+    icon: Flame,
+    tone: "saas-card--amber",
+  },
+  {
+    label: "Contest Rating",
+    value: "1,842",
+    meta: "top 18%",
+    icon: Trophy,
+    tone: "saas-card--green",
+  },
+  {
+    label: "Global Rank",
+    value: "#4.2k",
+    meta: "up 216 spots",
+    icon: Globe2,
+    tone: "saas-card--violet",
+  },
+];
+
+const tracks = [
+  { name: "Dynamic Programming", progress: 72, color: "var(--accent-primary)" },
+  { name: "Graphs", progress: 54, color: "var(--accent-secondary)" },
+  { name: "Trees", progress: 46, color: "var(--success)" },
+];
 
 const Home = () => {
-    const isLoggedIn = !!localStorage.getItem('token');
+  const isLoggedIn = Boolean(localStorage.getItem("token"));
 
-    return (
-        <div className="page-inner animate-fadeInUp">
-            <div className="card hover-lift" style={{
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between', 
-                gap: '2rem',
-                padding: '3rem',
-                background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary))',
-                border: '1px solid var(--border-primary)',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-                {/* Background decoration */}
-                <div style={{
-                    position: 'absolute',
-                    top: '-50%',
-                    right: '-20%',
-                    width: '300px',
-                    height: '300px',
-                    background: 'radial-gradient(circle, var(--text-accent) 0%, transparent 70%)',
-                    opacity: 0.1,
-                    borderRadius: '50%',
-                    zIndex: 0
-                }} />
-                
-                <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
-                    <h1 style={{
-                        fontSize: '3rem',
-                        margin: 0,
-                        background: 'linear-gradient(135deg, var(--text-primary), var(--text-accent))',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        lineHeight: 1.2
-                    }}>
-                        Welcome to DsaChamp
-                    </h1>
-                    <p className="text-secondary" style={{
-                        marginTop: '1rem',
-                        fontSize: '1.125rem',
-                        lineHeight: 1.6,
-                        maxWidth: '500px'
-                    }}>
-                        Master data structures & algorithms with curated problems, 
-                        instant feedback, and a LeetCode-inspired experience.
-                    </p>
-                    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                        <Link to="/problems" className="btn-primary" style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            textDecoration: 'none'
-                        }}>
-                            <span>Browse Problems</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </Link>
-                        {isLoggedIn ? (
-                        <Link to="/profile" className="btn-secondary" style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                        }}>
-                            <span>Profile</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </Link>
-                        ) : (
-                        <Link to="/login" className="btn-secondary" style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                        }}>
-                            <span>Sign In</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </Link>
-                        )}
-                    </div>
-                </div>
-                
-                <div style={{
-                    minWidth: '200px',
-                    position: 'relative',
-                    zIndex: 1,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                }}>
-                    <div style={{
-                        width: '150px',
-                        height: '150px',
-                        background: 'linear-gradient(135deg, var(--text-accent), #ff8c00)',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '4rem',
-                        fontWeight: 'bold',
-                        color: 'var(--bg-primary)',
-                        boxShadow: 'var(--shadow-lg)',
-                        animation: 'pulse 3s infinite'
-                    }}>
-                        💻
-                    </div>
-                </div>
-            </div>
-            
-            {/* Feature cards */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '1.5rem',
-                marginTop: '3rem'
-            }}>
-                {[
-                    {
-                        title: 'Curated Problems',
-                        description: 'Hand-picked problems from easy to hard difficulty levels',
-                        icon: '🎯'
-                    },
-                    {
-                        title: 'Instant Feedback',
-                        description: 'Get immediate results and detailed explanations',
-                        icon: '⚡'
-                    },
-                    {
-                        title: 'Multiple Languages',
-                        description: 'Support for C++, Java, Python, and JavaScript',
-                        icon: '🔧'
-                    }
-                ].map((feature, index) => (
-                    <div key={index} className={`card hover-lift animate-fadeInUp stagger-${index + 1}`} style={{
-                        padding: '2rem',
-                        textAlign: 'center',
-                        transition: 'all var(--transition-normal)',
-                        cursor: 'pointer'
-                    }}>
-                        <div style={{
-                            fontSize: '3rem',
-                            marginBottom: '1rem'
-                        }}>
-                            {feature.icon}
-                        </div>
-                        <h3 style={{
-                            fontSize: '1.25rem',
-                            fontWeight: 'var(--font-weight-semibold)',
-                            marginBottom: '0.5rem',
-                            color: 'var(--text-primary)'
-                        }}>
-                            {feature.title}
-                        </h3>
-                        <p className="text-secondary" style={{
-                            lineHeight: 1.6
-                        }}>
-                            {feature.description}
-                        </p>
-                    </div>
-                ))}
-            </div>
-
+  return (
+    <div className="page-inner animate-fadeInUp">
+      <section className="page-header">
+        <div>
+          <div className="page-eyebrow">Saturday, June 13</div>
+          <h1>Good morning, developer.</h1>
+          <p className="page-subtitle">
+            Keep your DSA practice focused with curated problems, fast execution,
+            and a calm workspace built for consistent improvement.
+          </p>
         </div>
-    )
-}
 
-export default Home
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <Link to="/problems" className="btn-primary">
+            <Plus size={16} />
+            Solve problem
+          </Link>
+          <Link to={isLoggedIn ? "/profile" : "/login"} className="btn-secondary">
+            View progress
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      <section className="soft-grid">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <article key={stat.label} className={`saas-card stat-card ${stat.tone}`}>
+              <div className="stat-card__top">
+                <span className="stat-card__icon">
+                  <Icon size={20} />
+                </span>
+                <span className="pill" style={{ background: "var(--surface-elevated)", color: "var(--accent-primary)" }}>
+                  Live
+                </span>
+              </div>
+              <div>
+                <div className="stat-card__label">{stat.label}</div>
+                <div className="stat-card__value">{stat.value}</div>
+                <div className="stat-card__meta">{stat.meta}</div>
+              </div>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="profile-grid">
+        <article className="saas-card" style={{ padding: 32 }}>
+          <div className="page-eyebrow">Focus plan</div>
+          <h2>Today&apos;s practice queue</h2>
+          <p className="page-subtitle" style={{ marginBottom: 24 }}>
+            A balanced set of problems selected to strengthen patterns without
+            turning the dashboard into noise.
+          </p>
+
+          <div style={{ display: "grid", gap: 14 }}>
+            {["Binary Search on Answer", "Shortest Path Review", "Two Pointer Warmup"].map((item, index) => (
+              <Link
+                key={item}
+                to="/problems"
+                className="saas-card"
+                style={{
+                  padding: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  boxShadow: "none",
+                  background: index === 0 ? "var(--surface-indigo)" : "var(--surface-soft)",
+                }}
+              >
+                <span>
+                  <strong style={{ display: "block", color: "var(--text-primary)" }}>
+                    {item}
+                  </strong>
+                  <span style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                    {index + 2} problems queued
+                  </span>
+                </span>
+                <ArrowRight size={18} color="var(--accent-primary)" />
+              </Link>
+            ))}
+          </div>
+        </article>
+
+        <aside className="saas-card" style={{ padding: 32 }}>
+          <span className="stat-card__icon" style={{ marginBottom: 18 }}>
+            <Sparkles size={20} />
+          </span>
+          <h2>Skill coverage</h2>
+          <p className="page-subtitle" style={{ fontSize: 14 }}>
+            Topic progress stays visible without taking over the workspace.
+          </p>
+
+          <div style={{ display: "grid", gap: 18, marginTop: 24 }}>
+            {tracks.map((track) => (
+              <div key={track.name}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 750 }}>
+                  <span>{track.name}</span>
+                  <span style={{ color: "var(--text-secondary)" }}>{track.progress}%</span>
+                </div>
+                <div style={{ height: 10, background: "var(--surface-soft)", borderRadius: 999, marginTop: 8, overflow: "hidden" }}>
+                  <div style={{ width: `${track.progress}%`, height: "100%", background: track.color, borderRadius: 999 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </section>
+
+      <section className="saas-card saas-card--indigo" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <span className="stat-card__icon">
+            <Medal size={20} />
+          </span>
+          <div>
+            <h3>Next milestone: 150 solved</h3>
+            <p style={{ color: "var(--text-secondary)", marginTop: 4 }}>
+              22 more accepted submissions to unlock the advanced graph set.
+            </p>
+          </div>
+        </div>
+        <Link to="/problems" className="btn-primary">
+          Continue
+        </Link>
+      </section>
+    </div>
+  );
+};
+
+export default Home;

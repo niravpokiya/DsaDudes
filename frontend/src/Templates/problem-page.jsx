@@ -11,6 +11,7 @@ import { increment_submission_count, increment_solved_count } from "../utils/sub
 
 export default function ProblemsPage() {
   const { slug } = useParams();
+  const workspaceRef = useRef(null);
   const [problem, setProblem] = useState(null);
   const [language, setLanguage] = useState("cpp");
   const [code, setCode] = useState(languageSnippets["cpp"].code);
@@ -19,7 +20,10 @@ export default function ProblemsPage() {
   const [sampleOutputs, setSampleOutputs] = useState([]);
   const [_outputMatch, _setOutputMatch] = useState(2);
   const [editorHeight, setEditorHeight] = useState(400); // for resizable dragger...
-  const [sidebarWidth, setSidebarWidth] = useState(350); // for vertical resizable divider
+  const [splitPercent, setSplitPercent] = useState(() => {
+    const saved = Number(localStorage.getItem("dsaChampProblemSplit"));
+    return Number.isFinite(saved) ? Math.min(60, Math.max(30, saved)) : 42;
+  });
   const isResizing = useRef(false);
   const isVerticalResizing = useRef(false);
   const [gotCorrectOutput, setGotCorrectOutput] = useState([]);
@@ -176,6 +180,10 @@ export default function ProblemsPage() {
   }, [language]);
 
   useEffect(() => {
+    localStorage.setItem("dsaChampProblemSplit", String(splitPercent));
+  }, [splitPercent]);
+
+  useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isResizing.current) return;
       setEditorHeight(() => Math.max(100, e.clientY - 100)); // prevent too small
@@ -194,16 +202,20 @@ export default function ProblemsPage() {
     };
   }, []);
 
-  // Vertical resizing for sidebar width
+  // Vertical split resizing for problem statement and editor panels.
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isVerticalResizing.current) return;
-      const newWidth = Math.max(280, Math.min(600, e.clientX)); // min 280px, max 600px
-      setSidebarWidth(newWidth);
+      const rect = workspaceRef.current?.getBoundingClientRect();
+      if (!rect?.width) return;
+
+      const nextPercent = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitPercent(Math.min(60, Math.max(30, nextPercent)));
     };
 
     const handleMouseUp = () => {
       isVerticalResizing.current = false;
+      document.body.classList.remove("is-resizing-split");
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -484,23 +496,8 @@ export default function ProblemsPage() {
 
   if (!problem)
     return (
-      <div
-        className="page-inner"
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "50vh",
-        }}
-      >
-        <div
-          className="loading"
-          style={{
-            padding: "2rem",
-            textAlign: "center",
-            color: "var(--text-secondary)",
-          }}
-        >
+      <div className="page-inner" style={{ minHeight: "60vh", justifyContent: "center", alignItems: "center" }}>
+        <div className="saas-card" style={{ padding: 32, textAlign: "center", color: "var(--text-secondary)" }}>
           <div
             style={{
               width: "40px",
@@ -518,33 +515,7 @@ export default function ProblemsPage() {
     );
 
   return (
-    <div
-      className="flex h-screen overflow-hidden"
-      style={{
-        background: "var(--bg-primary)",
-        width: "100%",
-        margin: 0,
-        padding: 0,
-      }}
-    >
-      <div
-        className="page-inner"
-        style={{
-          width: "100vw",
-          height: "90vh",
-          borderRadius: "var(--radius-lg)",
-          overflow: "scroll",
-        }}
-      >
-        <div
-          className="flex h-full"
-          style={{
-            alignItems: "stretch",
-            minWidth: 0,
-            flexWrap: "nowrap",
-            gap: 0,
-          }}
-        >
+    <div className="problem-workspace animate-fadeInUp" ref={workspaceRef}>
           <ProblemSidebar
             problem={problem}
             activeTab={activeTab}
@@ -567,31 +538,18 @@ export default function ProblemsPage() {
             setLanguage={setLanguage}
             getDifficultyColor={getDifficultyColor}
             setSubmissionResult={setSubmissionResult}
-            sidebarWidth={sidebarWidth}
+            sidebarWidth={`${splitPercent}%`}
           />
 
-          {/* Vertical Divider */}
           <div
+            className="split-divider"
             onMouseDown={() => {
               isVerticalResizing.current = true;
+              document.body.classList.add("is-resizing-split");
             }}
-            style={{
-              width: "4px",
-              background: "var(--border-primary)",
-              cursor: "col-resize",
-              transition: isVerticalResizing.current
-                ? "none"
-                : "background 0.2s",
-              flexShrink: 0,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--text-accent)";
-            }}
-            onMouseLeave={(e) => {
-              if (!isVerticalResizing.current) {
-                e.currentTarget.style.background = "var(--border-primary)";
-              }
-            }}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize problem and editor panels"
           />
 
           <EditorArea
@@ -616,8 +574,6 @@ export default function ProblemsPage() {
             setSubmissionResult={setSubmissionResult}
             setActiveTab={setActiveTab}
           />
-        </div>
-      </div>
     </div>
   );
 }

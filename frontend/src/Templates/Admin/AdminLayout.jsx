@@ -17,16 +17,18 @@ const AdminLayout = () => {
   const currentSection =
     links.find((link) => link.to === location.pathname) ||
     links.find((link) => link.end && location.pathname === link.to) ||
-    links.find((link) => location.pathname.startsWith(link.to + "/"));
+    links.find((link) => location.pathname.startsWith(`${link.to}/`));
 
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">
-          <div className="admin-sidebar__brandMark">AD</div>
+          <div className="admin-sidebar__brandMark">
+            <img src="/DsaChamp-logo.png" alt="DSAChamp logo" />
+          </div>
           <div className="admin-sidebar__brandTitle">
-            <strong>Admin Console</strong>
-            <span>Separate system</span>
+            <strong>DSAChamp</strong>
+            <span>Admin console</span>
           </div>
         </div>
 
@@ -40,16 +42,19 @@ const AdminLayout = () => {
               className={({ isActive }) => `admin-navLink ${isActive ? "admin-navLink--active" : ""}`}
             >
               <span>{link.label}</span>
-              <span aria-hidden="true">→</span>
             </NavLink>
           ))}
         </nav>
 
         <div className="admin-sidebar__sectionLabel">Session</div>
         <div className="admin-card" style={{ padding: "1rem" }}>
-          <div style={{ fontSize: "0.85rem", color: "rgba(232,237,247,0.7)", marginBottom: "0.35rem" }}>Signed in as</div>
-          <div style={{ fontWeight: 800, color: "#fff" }}>{user?.firstName || user?.username || "Admin"}</div>
-          <div style={{ marginTop: "0.35rem", color: "rgba(232,237,247,0.56)", fontSize: "0.85rem" }}>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "0.35rem" }}>
+            Signed in as
+          </div>
+          <div style={{ fontWeight: 800, color: "var(--text-primary)" }}>
+            {user?.firstName || user?.username || "Admin"}
+          </div>
+          <div style={{ marginTop: "0.35rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
             {user?.email || "admin access"}
           </div>
         </div>
@@ -59,7 +64,7 @@ const AdminLayout = () => {
         <header className="admin-topbar">
           <div className="admin-topbar__title">
             <h1>{currentSection?.label || "Admin"}</h1>
-            <p>Dedicated admin workspace with isolated navigation and routes.</p>
+            <p>Manage DSAChamp content with the same workspace system as the main app.</p>
           </div>
           <div className="admin-topbar__badge">ROLE_ADMIN</div>
         </header>

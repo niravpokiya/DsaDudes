@@ -3,8 +3,9 @@ import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import rehypeHighlight from "rehype-highlight";
 
-import "github-markdown-css/github-markdown-dark.css";
-import "highlight.js/styles/github-dark.css";
+import "github-markdown-css/github-markdown-light.css";
+import "highlight.js/styles/github.css";
+import { useTheme } from "../../Context/themeContext";
 import { UserContext } from "../../Context/userContext";
 import { download_testcases_zip, get_problem_by_id, get_testcase_status, update_problem, upload_testcases } from "../../utils/problem-apis";
 import "./problem-editor.css";
@@ -78,10 +79,12 @@ const generateSlug = (value) => {
 const AddProblem = () => {
   const { id } = useParams();
   const { user, showToast } = useContext(UserContext);
+  const { currentMode } = useTheme();
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState("Easy");
   const [topics, setTopics] = useState([]);
   const [activeTab, setActiveTab] = useState("details");
+  const [topicSearch, setTopicSearch] = useState("");
   const [storedSlug, setStoredSlug] = useState("");
   const [testcaseZipFile, setTestcaseZipFile] = useState(null);
   const [testcaseStatus, setTestcaseStatus] = useState(null);
@@ -178,6 +181,10 @@ target = 9
   const clearTopics = () => {
     setTopics([]);
   };
+
+  const filteredTopicOptions = TOPIC_OPTIONS.filter((topic) =>
+    topic.replace(/_/g, " ").toLowerCase().includes(topicSearch.trim().toLowerCase()),
+  );
 
   const currentSlug = generateSlug(title || problemData?.title || "");
   const testcaseSlug = storedSlug || currentSlug;
@@ -380,6 +387,15 @@ target = 9
           <button
             type="button"
             role="tab"
+            aria-selected={activeTab === "topics"}
+            className={`problem-editor-tab ${activeTab === "topics" ? "problem-editor-tab--active" : ""}`}
+            onClick={() => setActiveTab("topics")}
+          >
+            Topics
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={activeTab === "testcases"}
             className={`problem-editor-tab ${activeTab === "testcases" ? "problem-editor-tab--active" : ""}`}
             onClick={() => setActiveTab("testcases")}
@@ -427,60 +443,6 @@ target = 9
                     <option value="Hard">Hard</option>
                   </select>
                 </div>
-
-                <div className="problem-editor-field problem-editor-field--topics">
-                  <div className="problem-editor-topic-panel">
-                    <div className="problem-editor-topic-panel__header">
-                      <div>
-                        <label>Topics</label>
-                        <p className="problem-editor-topic-panel__hint">
-                          Toggle the problem tags below. The selected set stays visible as a compact stack.
-                        </p>
-                      </div>
-
-                      <div className="problem-editor-topic-panel__meta">
-                        <span>{topics.length} selected</span>
-                        {topics.length > 0 ? (
-                          <button type="button" onClick={clearTopics} className="problem-editor-topic-clear">
-                            Clear all
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className="problem-editor-topic-grid" aria-label="Available topics">
-                      {TOPIC_OPTIONS.map((topic) => {
-                        const isSelected = topics.includes(topic);
-
-                        return (
-                          <button
-                            key={topic}
-                            type="button"
-                            onClick={() => toggleTopic(topic)}
-                            className={`problem-editor-topic-tile ${isSelected ? "problem-editor-topic-tile--active" : ""}`}
-                            aria-pressed={isSelected}
-                          >
-                            <span>{topic}</span>
-                            <span className="problem-editor-topic-tile__action">{isSelected ? "Selected" : "Add"}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="problem-editor-topic-summary" aria-label="Selected topics">
-                      {topics.length > 0 ? (
-                        topics.map((topic) => (
-                          <button key={topic} type="button" onClick={() => toggleTopic(topic)} className="problem-editor-topic-chip">
-                            <span>{topic}</span>
-                            <span className="problem-editor-topic-chip__remove">Remove</span>
-                          </button>
-                        ))
-                      ) : (
-                        <span className="problem-editor-topic-empty">Pick one or more topics to build the problem profile.</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="problem-editor-field problem-editor-field--action">
@@ -507,7 +469,7 @@ target = 9
                   <span className="problem-editor-card__pill">Live</span>
                 </div>
 
-                <div data-color-mode="dark" className="problem-editor-pane problem-editor-pane--editor">
+                <div data-color-mode={currentMode} className="problem-editor-pane problem-editor-pane--editor">
                   <MDEditor
                     value={problemStatement}
                     onChange={(value) => setProblemStatement(value || "")}
@@ -537,7 +499,7 @@ target = 9
                   <span className="problem-editor-card__pill problem-editor-card__pill--alt">Updated as you type</span>
                 </div>
 
-                <div className="problem-editor-pane problem-editor-pane--preview markdown-body" data-color-mode="dark">
+                <div className="problem-editor-pane problem-editor-pane--preview markdown-body" data-color-mode={currentMode}>
                   <MDEditor.Markdown
                     source={problemStatement}
                     rehypePlugins={[rehypeHighlight]}
@@ -547,6 +509,75 @@ target = 9
               </div>
             </div>
           </>
+        ) : null}
+
+        {activeTab === "topics" ? (
+          <div className="problem-editor-card problem-editor-card--topics">
+            <div className="problem-editor-card__header">
+              <div>
+                <p className="problem-editor-card__eyebrow">Classify</p>
+                <h2>Topics</h2>
+              </div>
+              <span className="problem-editor-card__pill">{topics.length} selected</span>
+            </div>
+
+            <div className="problem-editor-topic-panel">
+              <div className="problem-editor-topic-panel__header">
+                <div>
+                  <label>Search topics</label>
+                  <p className="problem-editor-topic-panel__hint">
+                    Select only the tags that help users discover this problem.
+                  </p>
+                </div>
+
+                {topics.length > 0 ? (
+                  <button type="button" onClick={clearTopics} className="problem-editor-topic-clear">
+                    Clear all
+                  </button>
+                ) : null}
+              </div>
+
+              <input
+                type="search"
+                value={topicSearch}
+                onChange={(event) => setTopicSearch(event.target.value)}
+                placeholder="Search topics like graph, DP, binary search"
+                className="problem-editor-input"
+              />
+
+              <div className="problem-editor-topic-summary" aria-label="Selected topics">
+                {topics.length > 0 ? (
+                  topics.map((topic) => (
+                    <button key={topic} type="button" onClick={() => toggleTopic(topic)} className="problem-editor-topic-chip">
+                      <span>{topic.replace(/_/g, " ")}</span>
+                      <span className="problem-editor-topic-chip__remove">x</span>
+                    </button>
+                  ))
+                ) : (
+                  <span className="problem-editor-topic-empty">No topics selected yet.</span>
+                )}
+              </div>
+
+              <div className="problem-editor-topic-grid" aria-label="Available topics">
+                {filteredTopicOptions.map((topic) => {
+                  const isSelected = topics.includes(topic);
+
+                  return (
+                    <button
+                      key={topic}
+                      type="button"
+                      onClick={() => toggleTopic(topic)}
+                      className={`problem-editor-topic-tile ${isSelected ? "problem-editor-topic-tile--active" : ""}`}
+                      aria-pressed={isSelected}
+                    >
+                      <span>{topic.replace(/_/g, " ")}</span>
+                      <span className="problem-editor-topic-tile__action">{isSelected ? "Selected" : "Add"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         ) : null}
 
         {activeTab === "testcases" ? (

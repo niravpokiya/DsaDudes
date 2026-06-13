@@ -38,7 +38,7 @@ const AdminCreateProblem = () => {
     <section className="admin-card" style={{ padding: "1.4rem" }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
         <div>
-          <div style={{ color: "#ffc457", textTransform: "uppercase", letterSpacing: "0.2em", fontSize: "0.72rem" }}>Create draft problem</div>
+          <div className="page-eyebrow">Create draft problem</div>
           <h2 className="admin-sectionTitle" style={{ fontSize: "1.8rem", marginTop: "0.35rem" }}>Launch a new problem draft</h2>
           <p className="admin-sectionText" style={{ maxWidth: "760px" }}>
             This is a dedicated admin flow. It creates a blank draft, then opens the editor in the admin workspace so the public app never exposes this path.
@@ -54,9 +54,9 @@ const AdminCreateProblem = () => {
           </div>
         </div>
 
-        <div className="admin-card" style={{ padding: "1rem", background: "rgba(255,255,255,0.03)" }}>
+        <div className="admin-card" style={{ padding: "1rem", background: "var(--surface-soft)" }}>
           <div className="admin-sectionTitle">Draft flow</div>
-          <ol style={{ margin: "0.8rem 0 0", paddingLeft: "1.2rem", lineHeight: 1.8, color: "rgba(232,237,247,0.72)" }}>
+          <ol style={{ margin: "0.8rem 0 0", paddingLeft: "1.2rem", lineHeight: 1.8, color: "var(--text-secondary)" }}>
             <li>Create a draft record.</li>
             <li>Open the admin editor.</li>
             <li>Write statement, topics, and testcase upload.</li>

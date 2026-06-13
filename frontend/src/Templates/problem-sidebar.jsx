@@ -1,9 +1,11 @@
 import MDEditor from "@uiw/react-md-editor";
+import rehypeHighlight from "rehype-highlight";
+import { useTheme } from "../Context/themeContext";
 import ProblemSubmissionsTab from "./problem-submissions-tab";
 import SubmissionResultTab, { getResultTabTitle } from "./submission-result-tab";
 
-import "github-markdown-css/github-markdown-dark.css";
-import "highlight.js/styles/github-dark.css";
+import "github-markdown-css/github-markdown-light.css";
+import "highlight.js/styles/github.css";
 
 export default function ProblemSidebar({
   problem,
@@ -24,99 +26,54 @@ export default function ProblemSidebar({
   setSubmissionResult,
   sidebarWidth = 350,
 }) {
+  const { currentMode } = useTheme();
   const resultTabMeta = getResultTabTitle(submissionState, submissionResult, submitting);
+  const panelBasis = typeof sidebarWidth === "number" ? `${sidebarWidth}px` : sidebarWidth;
+  const topics = problem.topic ?? problem.tags ?? [];
 
   return (
-    <div className="modern-scrollbar" style={{ flex: `0 0 ${sidebarWidth}px`, minWidth: "280px", maxWidth: "600px", height: "100%", overflowY: "auto", padding: "0 0", minHeight: 0 }}>
-      <div className="card animate-fadeInLeft" style={{ height: "fit-content", padding: "1rem", minHeight: "100%" }}>
-        <div style={{ marginBottom: "0.75rem" }}>
-          <h2
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: "var(--font-weight-bold)",
-              color: "var(--text-primary)",
-              marginBottom: "0.375rem",
-              lineHeight: 1.3,
-            }}
-          >
+    <div className="problem-reader modern-scrollbar" style={{ flexBasis: panelBasis }}>
+      <div className="saas-card problem-reader__card animate-fadeInLeft">
+        <div>
+          <div className="page-eyebrow">Problem</div>
+          <h2>
             {problem.title}
           </h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
             <span className={`output-badge ${getDifficultyColor(problem.difficulty)}`}>
               {problem.difficulty}
+            </span>
+            <span className="pill" style={{ background: "var(--surface-soft)", color: "var(--text-secondary)" }}>
+              {problem.examples?.length || 0} samples
             </span>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            marginBottom: "0.75rem",
-            borderBottom: "1px solid var(--border-primary)",
-            paddingBottom: "0",
-          }}
-        >
+        <div className="problem-meta-strip">
+          {topics.length ? topics.slice(0, 6).map((tag) => (
+            <span className="tag" key={tag}>{String(tag).replace(/_/g, " ")}</span>
+          )) : <span style={{ color: "var(--text-muted)", fontSize: 13 }}>No tags added</span>}
+        </div>
+
+        <div className="tab-list">
           <button
             onClick={() => setActiveTab("description")}
-            style={{
-              padding: "0.5rem 1rem",
-              background: "transparent",
-              border: "none",
-              borderBottom: activeTab === "description" ? "2px solid var(--text-accent)" : "2px solid transparent",
-              color: activeTab === "description" ? "var(--text-primary)" : "var(--text-secondary)",
-              fontWeight: activeTab === "description" ? "var(--font-weight-semibold)" : "var(--font-weight-medium)",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              transition: "all var(--transition-fast)",
-              position: "relative",
-              bottom: "-1px",
-            }}
+            className={`tab-button ${activeTab === "description" ? "tab-button--active" : ""}`}
           >
             Description
           </button>
           <button
             onClick={() => setActiveTab("submissions")}
-            style={{
-              padding: "0.5rem 1rem",
-              background: "transparent",
-              border: "none",
-              borderBottom: activeTab === "submissions" ? "2px solid var(--text-accent)" : "2px solid transparent",
-              color: activeTab === "submissions" ? "var(--text-primary)" : "var(--text-secondary)",
-              fontWeight: activeTab === "submissions" ? "var(--font-weight-semibold)" : "var(--font-weight-medium)",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              transition: "all var(--transition-fast)",
-              position: "relative",
-              bottom: "-1px",
-            }}
+            className={`tab-button ${activeTab === "submissions" ? "tab-button--active" : ""}`}
           >
             Submissions
           </button>
           {showResultTab && (
             <button
               onClick={() => setActiveTab("result")}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.5rem 0.7rem",
-                background: "transparent",
-                border: "none",
-                borderBottom: activeTab === "result" ? "2px solid var(--text-accent)" : "2px solid transparent",
-                color: activeTab === "result" ? "var(--text-primary)" : "var(--text-secondary)",
-                fontWeight: activeTab === "result" ? "var(--font-weight-semibold)" : "var(--font-weight-medium)",
-                cursor: "pointer",
-                fontSize: "0.84rem",
-                transition: "all var(--transition-fast)",
-                position: "relative",
-                bottom: "-1px",
-                whiteSpace: "nowrap",
-              }}
+              className={`tab-button ${activeTab === "result" ? "tab-button--active" : ""}`}
             >
               <span>{resultTabMeta.short}</span>
-              <span>{resultTabMeta.icon}</span>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
@@ -149,8 +106,8 @@ export default function ProblemSidebar({
                 style={{
                   marginBottom: "0.75rem",
                   padding: "0.5rem 0.75rem",
-                  background: "linear-gradient(90deg, rgba(255,161,22,0.1), transparent)",
-                  border: "1px solid var(--text-accent)",
+                  background: "linear-gradient(90deg, var(--warning-bg), transparent)",
+                  border: "1px solid var(--warning)",
                   borderRadius: "var(--radius)",
                   display: "flex",
                   alignItems: "center",
@@ -180,20 +137,12 @@ export default function ProblemSidebar({
               </div>
             )}
 
-            <div style={{ marginBottom: "1rem" }}>
-              <h3
-                style={{
-                  fontSize: "1.125rem",
-                  fontWeight: "var(--font-weight-semibold)",
-                  color: "var(--text-primary)",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Problem Statement
-              </h3>
-              <div className="markdown-body" data-color-mode="dark">
+            <div className="problem-description-section">
+              <div className="section-label">Description</div>
+              <div className="markdown-body" data-color-mode={currentMode}>
                 <MDEditor.Markdown
                   source={problem.description || ""}
+                  rehypePlugins={[rehypeHighlight]}
                   className="problem-description-markdown"
                 />
               </div>

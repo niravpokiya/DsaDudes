@@ -3,12 +3,9 @@ import NavBar from './../Templates/navigation';
 
 const Layout = () => {
   return (
-     <div className="flex flex-col min-h-screen w-full" style={{
-       background: 'var(--bg-primary)',
-       color: 'var(--text-primary)'
-     }}>
+     <div className="app-shell">
       <NavBar />
-      <main className="flex-1 w-full">
+      <main className="app-main">
         <div className="main-content">
           <Outlet />
         </div>

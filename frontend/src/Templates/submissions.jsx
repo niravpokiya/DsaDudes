@@ -1,8 +1,11 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { UserContext } from '../Context/userContext';
-import { getSubmissions } from '../Helpers/getSubmissions';
-import './submissions.css';
+import { useContext, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Activity, CheckCircle2, Clock3, Search, SlidersHorizontal, XCircle } from "lucide-react";
+import { UserContext } from "../Context/userContext";
+import { getSubmissions } from "../Helpers/getSubmissions";
+import "./submissions.css";
+
+const PAGE_SIZE = 20;
 
 const SubmissionsList = () => {
   const { user } = useContext(UserContext);
@@ -11,7 +14,8 @@ const SubmissionsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 20;
+  const [query, setQuery] = useState("");
+  const [verdictFilter, setVerdictFilter] = useState("ALL");
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -22,13 +26,9 @@ const SubmissionsList = () => {
 
       try {
         const data = await getSubmissions(user.id);
-        if (data) {
-          setSubmissions(Array.isArray(data) ? data : []);
-        } else {
-          setSubmissions([]);
-        }
+        setSubmissions(Array.isArray(data) ? data : []);
       } catch (err) {
-        setError('Failed to load submissions');
+        setError("Failed to load submissions");
         console.error(err);
       } finally {
         setLoading(false);
@@ -38,288 +38,182 @@ const SubmissionsList = () => {
     fetchSubmissions();
   }, [user]);
 
-  const sortedSubmissions = useMemo(() => {
-    setPage(1);
-    return [...submissions].sort((a, b) => {
-      const aTime = new Date(a?.createdAt || 0).getTime();
-      const bTime = new Date(b?.createdAt || 0).getTime();
-      return bTime - aTime;
-    });
-  }, [submissions]);
-
   const getStatusMeta = (submission) => {
-    if (submission.verdict === 'ACCEPTED') {
-      return { label: 'Accepted', variant: 'status-accepted', icon: '✓' };
-    }
-    if (submission.verdict === 'WRONG_ANSWER') {
-      return { label: 'Wrong Answer', variant: 'status-wrong', icon: '✗' };
-    }
-    if (submission.verdict === 'TIME_LIMIT_EXCEEDED') {
-      return { label: 'TLE', variant: 'status-error', icon: '⏱' };
-    }
-    if (submission.verdict === 'RUNTIME_ERROR') {
-      return { label: 'Runtime Error', variant: 'status-error', icon: '!' };
-    }
-    if (submission.errorMessage) {
-      return { label: 'Compilation Error', variant: 'status-error', icon: '!' };
-    }
-    return { label: 'Pending', variant: 'status-pending', icon: '...' };
+    if (submission.verdict === "ACCEPTED") return { label: "Accepted", variant: "status-accepted", icon: CheckCircle2 };
+    if (submission.verdict === "WRONG_ANSWER") return { label: "Wrong Answer", variant: "status-wrong", icon: XCircle };
+    if (submission.verdict === "TIME_LIMIT_EXCEEDED") return { label: "Time Limit", variant: "status-warning", icon: Clock3 };
+    if (submission.verdict === "RUNTIME_ERROR" || submission.errorMessage) return { label: "Runtime Error", variant: "status-error", icon: XCircle };
+    return { label: "Pending", variant: "status-pending", icon: Clock3 };
   };
 
   const formatProblemTitle = (slug) => {
-    if (!slug) return 'Unknown Problem';
-    return slug
-      .replace(/-/g, ' ')
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+    if (!slug) return "Unknown Problem";
+    return slug.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
   const formatPerformance = (submission) => {
     const time = submission?.executionTime;
     const memory = submission?.memoryUsed;
-
-    let timeStr = null;
-    let memoryStr = null;
-
-    if (time !== null && time !== undefined && time >= 0) {
-      if (time > 1000) {
-        timeStr = `${(time / 1000).toFixed(2)}s`;
-      } else {
-        timeStr = `${time}ms`;
-      }
-    }
-
-    if (memory !== null && memory !== undefined && memory > 0) {
-      if (memory > 1024) {
-        memoryStr = `${(memory / 1024).toFixed(2)}GB`;
-      } else if (memory >= 1) {
-        memoryStr = `${memory.toFixed(2)}MB`;
-      } else {
-        memoryStr = `${memory}KB`;
-      }
-    }
-
-    if (timeStr && memoryStr) return `${timeStr} • ${memoryStr}`;
-    if (timeStr) return timeStr;
-    if (memoryStr) return memoryStr;
-    return 'N/A';
+    const timeStr = time !== null && time !== undefined && time >= 0 ? (time > 1000 ? `${(time / 1000).toFixed(2)}s` : `${time}ms`) : null;
+    const memoryStr = memory !== null && memory !== undefined && memory > 0 ? (memory > 1024 ? `${(memory / 1024).toFixed(2)}GB` : memory >= 1 ? `${memory.toFixed(2)}MB` : `${memory}KB`) : null;
+    if (timeStr && memoryStr) return `${timeStr} / ${memoryStr}`;
+    return timeStr || memoryStr || "N/A";
   };
 
   const formatDate = (timestamp) => {
-    if (!timestamp) return 'Unknown';
+    if (!timestamp) return "Unknown";
     const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return 'Unknown';
-    const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) {
-      const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-      return diffInMinutes <= 1 ? 'Just now' : `${diffInMinutes}m ago`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else if (diffInHours < 48) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+    if (Number.isNaN(date.getTime())) return "Unknown";
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const filteredSubmissions = useMemo(() => {
+    const lowerQuery = query.trim().toLowerCase();
+    return [...submissions]
+      .sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime())
+      .filter((submission) => {
+        const title = formatProblemTitle(submission.problemSlug).toLowerCase();
+        const verdict = submission.verdict || "PENDING";
+        const queryMatch = !lowerQuery || title.includes(lowerQuery) || String(submission.language || "").toLowerCase().includes(lowerQuery);
+        const verdictMatch = verdictFilter === "ALL" || verdict === verdictFilter;
+        return queryMatch && verdictMatch;
       });
-    }
-  };
+  }, [submissions, query, verdictFilter]);
 
-  if (loading) {
+  useEffect(() => {
+    setPage(1);
+  }, [query, verdictFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSubmissions.length / PAGE_SIZE));
+  const pageItems = filteredSubmissions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const acceptedCount = submissions.filter((submission) => submission.verdict === "ACCEPTED").length;
+  const failedCount = submissions.filter((submission) => submission.verdict && submission.verdict !== "ACCEPTED").length;
+  const acceptanceRate = submissions.length ? Math.round((acceptedCount / submissions.length) * 100) : 0;
+
+  if (loading || error || !user || submissions.length === 0) {
+    const message = loading
+      ? "Loading submissions..."
+      : error || (!user ? "Please login to view your submissions" : "No submissions yet");
+
     return (
-      <div className="submissions-page">
-        <div className="submissions-state-card">
-          <div className="submissions-spinner" />
-          <p>Loading submissions...</p>
+      <div className="page-inner">
+        <div className="submissions-state-card saas-card">
+          <h2>{message}</h2>
+          {!loading && (
+            error ? (
+              <button onClick={() => window.location.reload()} className="btn-primary">Try again</button>
+            ) : (
+              <Link to={user ? "/problems" : "/login"} className="btn-primary">
+                {user ? "Start solving problems" : "Sign in"}
+              </Link>
+            )
+          )}
         </div>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="submissions-page">
-        <div className="submissions-state-card">
-          <h2>{error}</h2>
-          <button onClick={() => window.location.reload()} className="submissions-action-btn">
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="submissions-page">
-        <div className="submissions-state-card">
-          <h2>Please login to view your submissions</h2>
-          <button onClick={() => navigate('/')} className="submissions-action-btn">
-            Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (sortedSubmissions.length === 0) {
-    return (
-      <div className="submissions-page">
-        <div className="submissions-state-card">
-          <h2>No submissions yet</h2>
-          <Link to="/problems" className="submissions-action-btn submissions-link-btn">
-            Start Solving Problems
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const totalPages = Math.ceil(sortedSubmissions.length / PAGE_SIZE);
-  const pageItems = sortedSubmissions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const handleGoToPage = (e) => {
-    e.preventDefault();
-    const val = parseInt(e.target.elements.gotopage.value, 10);
-    if (!isNaN(val) && val >= 1 && val <= totalPages) {
-      setPage(val);
-    }
-    e.target.elements.gotopage.value = '';
-  };
 
   return (
-    <div className="submissions-page">
-      <section className="submissions-shell">
-        <div className="submissions-header">
-          <h1>Submissions</h1>
-          <p>View all your problem submissions and their results</p>
-          <span className="submissions-count">{sortedSubmissions.length} total</span>
+    <div className="page-inner">
+      <section className="page-header">
+        <div>
+          <div className="page-eyebrow">Submission history</div>
+          <h1>Track every judge run.</h1>
+          <p className="page-subtitle">
+            Review verdicts, performance, languages, and recent attempts in one
+            focused issue-list style workspace.
+          </p>
         </div>
+      </section>
 
-        <div className="submissions-table-wrap">
-          <div className="submissions-table-scroll">
-            <table className="submissions-table">
-              <thead>
-                <tr>
-                  <th>Status</th>
-                  <th>Problem</th>
-                  <th>Language</th>
-                  <th>Performance</th>
-                  <th>Submitted</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageItems.map((submission) => {
-                  const status = getStatusMeta(submission);
-                    console.log(submission)
-                  return (
-                  <tr
-                    key={submission._id}
-                    className="submissions-row"
-                    onClick={() => navigate(`/submissions/${submission.id}`)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        navigate(`/submissions/${submission._id}`);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                  >
+      <section className="soft-grid submissions-stats">
+        <article className="saas-card stat-card saas-card--green">
+          <span className="stat-card__icon"><CheckCircle2 size={20} /></span>
+          <div><div className="stat-card__label">Accepted</div><div className="stat-card__value">{acceptedCount}</div><div className="stat-card__meta">successful submissions</div></div>
+        </article>
+        <article className="saas-card stat-card saas-card--rose">
+          <span className="stat-card__icon"><XCircle size={20} /></span>
+          <div><div className="stat-card__label">Needs review</div><div className="stat-card__value">{failedCount}</div><div className="stat-card__meta">failed or errored runs</div></div>
+        </article>
+        <article className="saas-card stat-card saas-card--blue">
+          <span className="stat-card__icon"><Activity size={20} /></span>
+          <div><div className="stat-card__label">Acceptance</div><div className="stat-card__value">{acceptanceRate}%</div><div className="stat-card__meta">all-time rate</div></div>
+        </article>
+        <article className="saas-card stat-card saas-card--indigo">
+          <span className="stat-card__icon"><Clock3 size={20} /></span>
+          <div><div className="stat-card__label">Total</div><div className="stat-card__value">{submissions.length}</div><div className="stat-card__meta">recorded attempts</div></div>
+        </article>
+      </section>
+
+      <section className="problems-toolbar">
+        <label style={{ position: "relative" }}>
+          <Search size={18} style={{ position: "absolute", left: 14, top: 13, color: "var(--text-muted)" }} />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by problem or language" style={{ paddingLeft: 42 }} />
+        </label>
+        <label style={{ position: "relative" }}>
+          <SlidersHorizontal size={18} style={{ position: "absolute", left: 14, top: 13, color: "var(--text-muted)" }} />
+          <select value={verdictFilter} onChange={(event) => setVerdictFilter(event.target.value)} style={{ paddingLeft: 42 }}>
+            <option value="ALL">All verdicts</option>
+            <option value="ACCEPTED">Accepted</option>
+            <option value="WRONG_ANSWER">Wrong Answer</option>
+            <option value="TIME_LIMIT_EXCEEDED">Time Limit</option>
+            <option value="RUNTIME_ERROR">Runtime Error</option>
+          </select>
+        </label>
+      </section>
+
+      <section className="problems-card">
+        <div className="submissions-table-scroll">
+          <table className="problems-table submissions-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Problem</th>
+                <th>Language</th>
+                <th>Performance</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pageItems.map((submission) => {
+                const status = getStatusMeta(submission);
+                const Icon = status.icon;
+                return (
+                  <tr key={submission.id || submission._id} className="submissions-row" onClick={() => navigate(`/submissions/${submission.id || submission._id}`)} tabIndex={0} role="button">
                     <td>
                       <span className={`submission-status-badge ${status.variant}`}>
-                        <span style={{ marginRight: '0.25rem' }}>{status.icon}</span>{status.label}
+                        <Icon size={14} />
+                        {status.label}
                       </span>
                     </td>
                     <td>
-                      <div className="submission-problem-title">
-                        {formatProblemTitle(submission.problemSlug)}
-                      </div>
+                      <div className="submission-problem-title">{formatProblemTitle(submission.problemSlug)}</div>
                       <div className="submission-problem-meta">
-                        {submission.totalTestcases ? `${submission.passedTestcases}/${submission.totalTestcases} tests passed` : 'No test results'}
+                        {submission.totalTestcases ? `${submission.passedTestcases}/${submission.totalTestcases} tests passed` : "No test results"}
                       </div>
                     </td>
-                    <td>
-                      <div className="submission-lang">
-                        {submission.language ? submission.language.toUpperCase() : 'Unknown'}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="submission-performance">
-                        {formatPerformance(submission)}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="submission-date">
-                        {formatDate(submission.createdAt)}
-                      </div>
-                    </td>
+                    <td><span className="tag">{submission.language ? submission.language.toUpperCase() : "Unknown"}</span></td>
+                    <td><div className="submission-performance">{formatPerformance(submission)}</div></td>
+                    <td><div className="submission-date">{formatDate(submission.createdAt)}</div></td>
                   </tr>
                 );
-                })}
-              </tbody>
-            </table>
-          </div>
+              })}
+            </tbody>
+          </table>
         </div>
-
-        {totalPages > 1 && (
-          <div className="submissions-pagination">
-            <button
-              className="sub-page-btn"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              ‹ Prev
-            </button>
-
-            <div className="sub-page-numbers">
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(n => n === 1 || n === totalPages || Math.abs(n - page) <= 2)
-                .reduce((acc, n, idx, arr) => {
-                  if (idx > 0 && n - arr[idx - 1] > 1) acc.push('...');
-                  acc.push(n);
-                  return acc;
-                }, [])
-                .map((n, idx) =>
-                  n === '...' ? (
-                    <span key={`ellipsis-${idx}`} className="sub-page-ellipsis">…</span>
-                  ) : (
-                    <button
-                      key={n}
-                      className={`sub-page-num${page === n ? ' active' : ''}`}
-                      onClick={() => setPage(n)}
-                    >
-                      {n}
-                    </button>
-                  )
-                )}
-            </div>
-
-            <button
-              className="sub-page-btn"
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              Next ›
-            </button>
-
-            <form className="sub-goto-form" onSubmit={handleGoToPage}>
-              <span className="sub-goto-label">Go to</span>
-              <input
-                className="sub-goto-input"
-                name="gotopage"
-                type="number"
-                min={1}
-                max={totalPages}
-                placeholder={page}
-              />
-              <button className="sub-page-btn" type="submit">Go</button>
-            </form>
-          </div>
-        )}
-
       </section>
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page === 1}>Prev</button>
+          {Array.from({ length: totalPages }, (_, index) => index + 1)
+            .filter((number) => number === 1 || number === totalPages || Math.abs(number - page) <= 2)
+            .map((number) => (
+              <button key={number} className={page === number ? "active" : ""} onClick={() => setPage(number)}>{number}</button>
+            ))}
+          <button onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={page === totalPages}>Next</button>
+        </div>
+      )}
     </div>
   );
 };
