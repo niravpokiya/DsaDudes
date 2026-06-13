@@ -53,7 +53,8 @@ export default function EditorArea({
           </label>
           <select
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            onChange={() => setLanguage("cpp")}
+            disabled
             style={{
               background: "var(--bg-accent)",
               color: "var(--text-primary)",
@@ -62,13 +63,11 @@ export default function EditorArea({
               padding: "0.5rem 1rem",
               fontSize: "0.875rem",
               fontWeight: "var(--font-weight-medium)",
-              cursor: "pointer",
+              cursor: "not-allowed",
+              opacity: 0.88,
             }}
           >
             <option value="cpp">C++</option>
-            <option value="java">Java</option>
-            <option value="python">Python</option>
-            <option value="javascript">JavaScript</option>
           </select>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>

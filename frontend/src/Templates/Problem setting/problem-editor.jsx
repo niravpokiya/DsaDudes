@@ -80,7 +80,6 @@ const AddProblem = () => {
   const { user, showToast } = useContext(UserContext);
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState("Easy");
-  const [selectedTopic, setSelectedTopic] = useState(TOPIC_OPTIONS[0]);
   const [topics, setTopics] = useState([]);
   const [activeTab, setActiveTab] = useState("details");
   const [storedSlug, setStoredSlug] = useState("");
@@ -150,7 +149,6 @@ target = 9
         setTitle(data.title || "");
         setDifficulty(normalizeDifficulty(data.difficulty));
         setTopics(normalizeTopics(data.topic ?? data.tags));
-        setSelectedTopic(TOPIC_OPTIONS[0]);
         setStoredSlug(generateSlug(data.title || ""));
         setProblemStatement(data.description || "");
       } catch (fetchError) {
@@ -163,18 +161,22 @@ target = 9
     fetchProblem();
   }, [id]);
 
-  const addTopic = () => {
-    const topicToAdd = String(selectedTopic || "").trim().toUpperCase();
+  const toggleTopic = (topicToToggle) => {
+    const normalizedTopic = String(topicToToggle || "").trim().toUpperCase();
 
-    if (!topicToAdd) {
+    if (!normalizedTopic) {
       return;
     }
 
-    setTopics((previousTopics) => (previousTopics.includes(topicToAdd) ? previousTopics : [...previousTopics, topicToAdd]));
+    setTopics((previousTopics) =>
+      previousTopics.includes(normalizedTopic)
+        ? previousTopics.filter((topic) => topic !== normalizedTopic)
+        : [...previousTopics, normalizedTopic],
+    );
   };
 
-  const removeTopic = (topicToRemove) => {
-    setTopics((previousTopics) => previousTopics.filter((topic) => topic !== topicToRemove));
+  const clearTopics = () => {
+    setTopics([]);
   };
 
   const currentSlug = generateSlug(title || problemData?.title || "");
@@ -427,48 +429,56 @@ target = 9
                 </div>
 
                 <div className="problem-editor-field problem-editor-field--topics">
-                  <label>
-                    Topic
-                  </label>
+                  <div className="problem-editor-topic-panel">
+                    <div className="problem-editor-topic-panel__header">
+                      <div>
+                        <label>Topics</label>
+                        <p className="problem-editor-topic-panel__hint">
+                          Toggle the problem tags below. The selected set stays visible as a compact stack.
+                        </p>
+                      </div>
 
-                  <div className="problem-editor-topic-picker">
-                    <select
-                      value={selectedTopic}
-                      onChange={(e) => setSelectedTopic(e.target.value)}
-                      className="problem-editor-input"
-                    >
-                      {TOPIC_OPTIONS.map((topic) => (
-                        <option key={topic} value={topic}>
-                          {topic}
-                        </option>
-                      ))}
-                    </select>
+                      <div className="problem-editor-topic-panel__meta">
+                        <span>{topics.length} selected</span>
+                        {topics.length > 0 ? (
+                          <button type="button" onClick={clearTopics} className="problem-editor-topic-clear">
+                            Clear all
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={addTopic}
-                      className="problem-editor-topic-add-button"
-                    >
-                      Add
-                    </button>
-                  </div>
+                    <div className="problem-editor-topic-grid" aria-label="Available topics">
+                      {TOPIC_OPTIONS.map((topic) => {
+                        const isSelected = topics.includes(topic);
 
-                  <div className="problem-editor-topic-list" aria-label="Selected topics">
-                    {topics.length > 0 ? topics.map((topic) => (
-                      <span key={topic} className="problem-editor-topic-chip">
-                        <span>{topic}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeTopic(topic)}
-                          className="problem-editor-topic-remove"
-                          aria-label={`Remove ${topic}`}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )) : (
-                      <span className="problem-editor-topic-empty">No topics added yet.</span>
-                    )}
+                        return (
+                          <button
+                            key={topic}
+                            type="button"
+                            onClick={() => toggleTopic(topic)}
+                            className={`problem-editor-topic-tile ${isSelected ? "problem-editor-topic-tile--active" : ""}`}
+                            aria-pressed={isSelected}
+                          >
+                            <span>{topic}</span>
+                            <span className="problem-editor-topic-tile__action">{isSelected ? "Selected" : "Add"}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="problem-editor-topic-summary" aria-label="Selected topics">
+                      {topics.length > 0 ? (
+                        topics.map((topic) => (
+                          <button key={topic} type="button" onClick={() => toggleTopic(topic)} className="problem-editor-topic-chip">
+                            <span>{topic}</span>
+                            <span className="problem-editor-topic-chip__remove">Remove</span>
+                          </button>
+                        ))
+                      ) : (
+                        <span className="problem-editor-topic-empty">Pick one or more topics to build the problem profile.</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

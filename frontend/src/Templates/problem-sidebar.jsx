@@ -218,9 +218,7 @@ export default function ProblemSidebar({
             onViewCode={(snapshot) => {
               if (snapshot?.sourceCode) {
                 setCode(snapshot.sourceCode);
-                if (snapshot.language) {
-                  setLanguage(snapshot.language);
-                }
+                setLanguage("cpp");
                 setActiveTab("description");
               }
             }}

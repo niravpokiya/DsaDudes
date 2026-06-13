@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../Context/userContext";
+import ThemeSwitcher from "../Components/ThemeSwitcher";
 
 const NavBar = () => {
   const location = useLocation();
@@ -66,8 +67,8 @@ const NavBar = () => {
                   key={item.path}
                   to={item.path}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-accent text-primary' 
+                    isActive
+                      ? 'bg-accent text-primary'
                       : 'text-secondary hover:text-primary hover:bg-accent'
                   }`}
                   style={{
@@ -79,6 +80,7 @@ const NavBar = () => {
                 </Link>
               );
             })}
+            <ThemeSwitcher />
             {!isLoggedIn && (
               <button
                 onClick={() => navigate('/login')}

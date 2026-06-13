@@ -9,37 +9,42 @@
   --font-weight-bold: 700;
   --line-height: 1.5;
 
-  /* LeetCode-inspired Color Palette */
-  --bg-primary: #1a1a1a; /* Main background */
-  --bg-secondary: #262626; /* Secondary background */
-  --bg-tertiary: #2d2d2d; /* Card backgrounds */
-  --bg-accent: #3d3d3d; /* Hover states */
+  /* Theme Variables (set by ThemeProvider) */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-accent: #475569;
   
-  --text-primary: #ffffff; /* Primary text */
-  --text-secondary: #b3b3b3; /* Secondary text */
-  --text-muted: #808080; /* Muted text */
-  --text-accent: #8b5cf6; /* Accent text (Purple) */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-accent: #38bdf8;
   
-  --border-primary: #404040; /* Primary borders */
-  --border-secondary: #2d2d2d; /* Secondary borders */
+  --accent-primary: #0ea5e9;
+  --accent-secondary: #0284c7;
+  --accent-light: #38bdf8;
+  --accent-dark: #0369a1;
   
-  /* Status Colors */
-  --success: #00b8a3; /* LeetCode green */
-  --success-bg: rgba(0, 184, 163, 0.1);
-  --warning: #a78bfa; /* Purple warning */
-  --warning-bg: rgba(167, 139, 250, 0.1);
-  --error: #ff4d4f; /* Error red */
-  --error-bg: rgba(255, 77, 79, 0.1);
-  --info: #1890ff; /* Info blue */
-  --info-bg: rgba(24, 144, 255, 0.1);
+  --border-primary: #334155;
+  --border-secondary: #475569;
+  --border-glass: rgba(14, 165, 233, 0.2);
+  
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --error: #ef4444;
+  --error-bg: rgba(239, 68, 68, 0.15);
+  --info: #1890ff;
+  --info-bg: rgba(24, 144, 255, 0.15);
   
   /* Difficulty Colors */
-  --easy: #00b8a3;
-  --easy-bg: rgba(0, 184, 163, 0.1);
-  --medium: #8b5cf6;
-  --medium-bg: rgba(139, 92, 246, 0.1);
-  --hard: #ff4d4f;
-  --hard-bg: rgba(255, 77, 79, 0.1);
+  --easy: #10b981;
+  --easy-bg: rgba(16, 185, 129, 0.15);
+  --medium: #f59e0b;
+  --medium-bg: rgba(245, 158, 11, 0.15);
+  --hard: #ef4444;
+  --hard-bg: rgba(239, 68, 68, 0.15);
 
   /* Geometry */
   --radius: 8px;

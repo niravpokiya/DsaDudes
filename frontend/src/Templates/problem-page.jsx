@@ -90,10 +90,8 @@ export default function ProblemsPage() {
   };
 
   useEffect(() => {
-    if (user && user.current_selected_language) {
-      setLanguage(user.current_selected_language);
-    }
-  }, [user]);
+    setLanguage("cpp");
+  }, [setLanguage]);
 
   useEffect(() => {
     const fetchProblem = async () => {
