@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "Execution-Submission-Service", url = "localhost:8092")
+@FeignClient(name = "Execution-Submission-Service")
 @Component
 public interface ExecutionSubmissionClient {
     @PutMapping("api/submissions/update/{submissionId}")
