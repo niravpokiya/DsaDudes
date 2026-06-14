@@ -7,7 +7,7 @@ import languageSnippets from "../snippets/snippet";
 import EditorArea from "./editor-area";
 import ProblemSidebar from "./problem-sidebar";
 import { api } from "../utils/api";
-import { increment_submission_count, increment_solved_count } from "../utils/submission-apis";
+import { increment_submission_count } from "../utils/submission-apis";
 
 export default function ProblemsPage() {
   const { slug } = useParams();
@@ -364,20 +364,12 @@ export default function ProblemsPage() {
           problemTitle: problem.title,
           problemSlug: slug,
         }));
-      });
+      }, problem.id, problem.difficulty);
 
       if (res && res.completed) {
         // Create comprehensive submission object
         await increment_submission_count(user.id);
 
-        // increment solved only if accepted
-        if (res.verdict === "ACCEPTED") {
-          await increment_solved_count(
-            user.id,
-            problem.difficulty
-          );
-        }
-        
         const submission = {
           ...res,
           id: Date.now(),

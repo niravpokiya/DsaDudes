@@ -20,6 +20,14 @@ export const user_submissions_stats = async () => {
   return await api.get("/user/stats");
 };
 
+export const user_submissions = async (userId) => {
+  return await api.get(`/submissions/all-submissions/${userId}`);
+};
+
+export const user_submission_heatmap = async (userId) => {
+  return await api.get(`/submissions/heatmap?userId=${userId}`);
+};
+
 export const increment_submission_count = async (userId) => {
   return await api.put(`/user/${userId}/increment-submissions`);
 };

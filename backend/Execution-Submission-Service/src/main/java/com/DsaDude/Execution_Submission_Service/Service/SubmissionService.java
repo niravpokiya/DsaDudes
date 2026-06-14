@@ -18,10 +18,16 @@ public class SubmissionService {
 
     private final SubmissionRepository submissionRepository;
     private final MongoTemplate mongoTemplate;
+    private final SolvedProblemService solvedProblemService;
 
-    public SubmissionService(SubmissionRepository submissionRepository, MongoTemplate mongoTemplate) {
+    public SubmissionService(
+            SubmissionRepository submissionRepository,
+            MongoTemplate mongoTemplate,
+            SolvedProblemService solvedProblemService
+    ) {
         this.submissionRepository = submissionRepository;
         this.mongoTemplate = mongoTemplate;
+        this.solvedProblemService = solvedProblemService;
     }
 
     // ✅ Get all submissions of a user
@@ -100,7 +106,13 @@ public class SubmissionService {
         submission.setErrorMessage(dto.getErrorMessage());
         submission.setStatus("COMPLETED");
 
-        return submissionRepository.save(submission);
+        Submission savedSubmission = submissionRepository.save(submission);
+
+        if ("ACCEPTED".equalsIgnoreCase(savedSubmission.getVerdict())) {
+            solvedProblemService.trackAcceptedSubmission(savedSubmission);
+        }
+
+        return savedSubmission;
     }
 
     // Heatmap data

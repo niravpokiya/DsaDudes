@@ -14,5 +14,8 @@ public class ExecutionJob {
     private String input;
     private String status;
     private String typeOfJob;
+    private int userId;
     private String problemSlug;
+    private String questionId;
+    private String difficulty;
 }

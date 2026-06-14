@@ -51,6 +51,7 @@ public class JobProducer {
             submission.setUserId(request.getUserId());
             submission.setQuestionId(request.getQuestionId());
             submission.setProblemSlug(request.getProblemSlug());
+            submission.setDifficulty(normalizeDifficulty(request.getDifficulty()));
             submission.setSourceCode(request.getSourceCode());
             submission.setLanguage(request.getLanguage());
 
@@ -73,6 +74,11 @@ public class JobProducer {
                 new JobResponse(jobId, "QUEUED")
         );
     }
+
+    private String normalizeDifficulty(String difficulty) {
+        return difficulty == null ? null : difficulty.trim().toUpperCase();
+    }
+
     public ResponseEntity<ExecutionResult> getResult(String id) {
         System.out.println("Getting result for job: " + id);
         Map<Object, Object> data = redisService.getExecution(id);

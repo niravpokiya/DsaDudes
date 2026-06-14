@@ -1,11 +1,10 @@
-import { clearAuthToken }
-from "../utils/api";
+import { signout } from "../utils/auth-apis";
 
 export default function logout(navigate, setUser) {
   try {
     // remove token
-    clearAuthToken();
-
+    signout();
+    
     // clear context
     setUser(null);
 

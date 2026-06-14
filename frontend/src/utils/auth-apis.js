@@ -36,6 +36,19 @@ export const login = async (credentials) => {
 }
 
 // logout helper
-export const logout = () => {
+export const signout = async () => {
+  const token = localStorage.getItem('token');
   clearAuthToken();
+
+  try {
+    await api.post('/auth/logout', null, token ? {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    } : undefined);
+  } catch (error) {
+    return false;
+  }
+
+  return true;
 };

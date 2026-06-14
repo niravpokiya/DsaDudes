@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Award, Clock3, LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../Context/userContext";
@@ -7,11 +7,72 @@ import ProfileAbout from "./Profile/ProfileAbout";
 import ProfileDifficultyGraph from "./Profile/ProfileDifficultyGraph";
 import ProfileHeatmap from "./Profile/ProfileHeatmap";
 import ProfileStats from "./Profile/ProfileStats";
+import { user_submissions } from "../utils/submission-apis";
+
+const formatProblemTitle = (slug) =>
+  String(slug || "Unknown problem")
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+const getSubmissionId = (submission) => submission?.id || submission?._id || submission?.submissionId;
+
+const getSubmissionTime = (submission) => {
+  const time = submission?.submissionTime || submission?.timestamp || submission?.createdAt;
+  const date = time ? new Date(time) : null;
+  return date && Number.isFinite(date.getTime()) ? date : null;
+};
+
+const formatSubmissionMeta = (submission) => {
+  const verdict = submission?.verdict || "UNKNOWN";
+  const language = submission?.language || "Unknown";
+  const date = getSubmissionTime(submission);
+  const dateText = date ? date.toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "Recent";
+
+  return `${verdict} - ${language} - ${dateText}`;
+};
 
 function Profile() {
   const { user, loading, setUser } = useContext(UserContext);
   const navigate = useNavigate();
   const displayName = user?.firstName || user?.username || "Anonymous Coder";
+  const [recentSubmissions, setRecentSubmissions] = useState([]);
+  const [loadingRecentSubmissions, setLoadingRecentSubmissions] = useState(false);
+
+  useEffect(() => {
+    const fetchRecentSubmissions = async () => {
+      if (!user?.id) {
+        setRecentSubmissions([]);
+        return;
+      }
+
+      setLoadingRecentSubmissions(true);
+
+      try {
+        const res = await user_submissions(user.id);
+        const submissions = Array.isArray(res.data) ? res.data : [];
+
+        setRecentSubmissions(
+          submissions
+            .slice()
+            .sort((a, b) => {
+              const bTime = getSubmissionTime(b)?.getTime() || 0;
+              const aTime = getSubmissionTime(a)?.getTime() || 0;
+              return bTime - aTime;
+            })
+            .slice(0, 3),
+        );
+      } catch (error) {
+        console.error("Error fetching recent submissions:", error);
+        setRecentSubmissions([]);
+      } finally {
+        setLoadingRecentSubmissions(false);
+      }
+    };
+
+    fetchRecentSubmissions();
+  }, [user?.id]);
 
   if (loading) {
     return (
@@ -30,7 +91,7 @@ function Profile() {
             <div className="page-eyebrow">Developer profile</div>
             <h1>{displayName}</h1>
             <p className="page-subtitle" style={{ marginTop: 8 }}>
-              @{user?.username || "username"} · {user?.role || "USER"}
+              @{user?.username || "username"} - {user?.role || "USER"}
             </p>
           </div>
         </div>
@@ -90,15 +151,39 @@ function Profile() {
           <article className="saas-card">
             <div className="page-eyebrow">Recent submissions</div>
             <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-              {["Two Sum", "Valid Parentheses", "Merge Intervals"].map((item) => (
-                <div key={item} className="metadata-item" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <div>
-                    <strong>{item}</strong>
-                    <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Accepted · C++</p>
-                  </div>
-                  <Clock3 size={16} color="var(--text-muted)" />
-                </div>
-              ))}
+              {loadingRecentSubmissions ? (
+                <div className="metadata-item">Loading recent submissions...</div>
+              ) : recentSubmissions.length ? (
+                recentSubmissions.map((submission) => {
+                  const submissionId = getSubmissionId(submission);
+
+                  return (
+                    <button
+                      key={submissionId}
+                      className="metadata-item"
+                      type="button"
+                      onClick={() => submissionId && navigate(`/submissions/${submissionId}`)}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div>
+                        <strong>{formatProblemTitle(submission.problemSlug)}</strong>
+                        <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+                          {formatSubmissionMeta(submission)}
+                        </p>
+                      </div>
+                      <Clock3 size={16} color="var(--text-muted)" />
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="metadata-item">No submissions yet.</div>
+              )}
             </div>
           </article>
 

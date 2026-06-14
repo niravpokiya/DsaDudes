@@ -1,8 +1,6 @@
 package com.DsaDudes.User_service.Controller;
 
-import com.DsaDudes.User_service.DTO.UserDTO;
-import com.DsaDudes.User_service.Models.User;
-import com.DsaDudes.User_service.Repository.UserRepository;
+import com.DsaDudes.User_service.DTO.ProfileResponse;
 import com.DsaDudes.User_service.Services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,19 +19,19 @@ public class UserController {
 //    ===============================   PUBLIC ENDPOINTS =======================================
 
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<ProfileResponse> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).build();
         }
 
         String token = authHeader.substring(7); // Remove "Bearer "
-        User user = userService.getUserFromToken(token); // We'll implement this in UserService
+        ProfileResponse profile = userService.getProfileFromToken(token);
 
-        if (user == null) {
+        if (profile == null) {
             return ResponseEntity.status(401).build();
         }
 
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(profile);
     }
 
     // Getting User stats ===================
@@ -64,17 +62,8 @@ public class UserController {
             @PathVariable int userId,
             @RequestParam String difficulty
     ) {
-        try {
-            // Validating early so we don't hit the DB for garbage data
-            String upperDiff = difficulty.toUpperCase();
-            if (!upperDiff.equals("EASY") && !upperDiff.equals("MEDIUM") && !upperDiff.equals("HARD")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid difficulty. Use EASY, MEDIUM, or HARD"));
-            }
-
-            userService.incrementSolvedCount(userId, upperDiff);
-            return ResponseEntity.ok(Map.of("message", upperDiff + " solved count incremented successfully"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.status(410).body(Map.of(
+                "error", "Solved statistics are managed by Submission Service."
+        ));
     }
 }

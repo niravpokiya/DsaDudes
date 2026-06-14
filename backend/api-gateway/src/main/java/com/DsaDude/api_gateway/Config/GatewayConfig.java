@@ -34,6 +34,10 @@ public class GatewayConfig {
                         .path("/api/submissions/**")
                         .uri("http://localhost:8092"))
 
+                .route("solved-service", r -> r
+                        .path("/api/solved/**")
+                        .uri("http://localhost:8092"))
+
                 // Code Execution
                 .route("execution-service", r -> r
                         .path("/api/code/**")

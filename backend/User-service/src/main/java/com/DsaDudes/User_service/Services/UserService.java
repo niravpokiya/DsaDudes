@@ -16,9 +16,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.DsaDudes.User_service.DTO.AdminUserDTO;
+import com.DsaDudes.User_service.DTO.ProfileResponse;
+import com.DsaDudes.User_service.DTO.SolvedStatsResponse;
 import com.DsaDudes.User_service.DTO.UserDTO;
 import com.DsaDudes.User_service.DTO.UserLoginRequest;
 import com.DsaDudes.User_service.Enums.Role;
+import com.DsaDudes.User_service.Feign.SolvedStatsClient;
 import com.DsaDudes.User_service.Models.User;
 import com.DsaDudes.User_service.Repository.UserRepository;
 
@@ -33,6 +36,7 @@ public class UserService {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private AuthenticationManager authenticationManager;
     @Autowired private JWTService jwtService;
+    @Autowired private SolvedStatsClient solvedStatsClient;
 
     public ResponseEntity<Map<String, Object>> registerUser(UserDTO user) {
         Map<String, Object> response = new HashMap<>();
@@ -124,20 +128,40 @@ public class UserService {
         }
     }
 
+    public ProfileResponse getProfileFromToken(String token) {
+        User user = getUserFromToken(token);
+        if (user == null) {
+            return null;
+        }
+
+        return new ProfileResponse(user, fetchSolvedStats(user.getId()));
+    }
+
     // Getting user stats -----------------------------------
-    public Map<String, Integer> getUserStats(String token) {
+    public Map<String, Object> getUserStats(String token) {
         User user = getUserFromToken(token);
         if (user == null) {
             throw new RuntimeException("Invalid token");
         }
 
+        SolvedStatsResponse stats = fetchSolvedStats(user.getId());
+
         return Map.of(
                 "totalSubmissions", user.getTotalSubmissions(),
-                "totalSolved", user.getSolvedCount(),
-                "easySolved", user.getEasySolvedCount(),
-                "mediumSolved", user.getMediumSolvedCount(),
-                "hardSolved", user.getHardSolvedCount()
+                "totalSolved", stats.getSolvedCount(),
+                "easySolved", stats.getEasySolvedCount(),
+                "mediumSolved", stats.getMediumSolvedCount(),
+                "hardSolved", stats.getHardSolvedCount()
         );
+    }
+
+    private SolvedStatsResponse fetchSolvedStats(int userId) {
+        try {
+            SolvedStatsResponse stats = solvedStatsClient.getSolvedStats(userId);
+            return stats == null ? new SolvedStatsResponse() : stats;
+        } catch (Exception exception) {
+            return new SolvedStatsResponse();
+        }
     }
 
     public List<AdminUserDTO> getAllUsers() {

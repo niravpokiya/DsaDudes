@@ -150,7 +150,7 @@ const ProfileHeatmap = ({ userId }) => {
                   className="w-[11px] h-[11px] rounded-sm transition-colors duration-150"
                   style={{
                     background: intensityColor(lvl),
-                    border: "1px solid rgba(15,23,42,0.04)",
+                    border: "1px solid rgba(15,23,43,0.35)",
                   }}
                 />
               );

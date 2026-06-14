@@ -1,7 +1,14 @@
 import { api } from "../utils/api";
-import { increment_submission_count } from "../utils/submission-apis";
  
-async function SubmitCode(code, language, problemSlug, userId = null, onStatusUpdate = null) {
+async function SubmitCode(
+  code,
+  language,
+  problemSlug,
+  userId = null,
+  onStatusUpdate = null,
+  questionId = null,
+  difficulty = null
+) {
    
 
   // moving forward 
@@ -13,6 +20,8 @@ async function SubmitCode(code, language, problemSlug, userId = null, onStatusUp
         language,
         userId,
         problemSlug,
+        questionId,
+        difficulty,
         typeOfJob: "SUBMIT",
       },
     );

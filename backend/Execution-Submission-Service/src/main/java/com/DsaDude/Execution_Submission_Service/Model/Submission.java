@@ -17,6 +17,7 @@ public class Submission {
     // who submitted
     private String questionId;     // reference to problem
     private String problemSlug;    // faster lookup (no join needed)
+    private String difficulty;
     private String sourceCode;
     // code user submitted
     private String language;       // cpp / java / python

@@ -14,4 +14,5 @@ public class ExecutionJob {
     public int userId;
     public String problemSlug;
     public String questionId;
+    public String difficulty;
 }

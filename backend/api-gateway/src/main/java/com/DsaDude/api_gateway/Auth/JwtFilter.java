@@ -1,5 +1,6 @@
 package com.DsaDude.api_gateway.Auth;
 
+import com.DsaDude.api_gateway.Service.TokenBlacklistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -18,6 +19,8 @@ public class JwtFilter implements GlobalFilter {
 
     @Autowired
     private JwtUtil jwtUtil;
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
 
     private static final Map<String, List<String>> ROLE_ACCESS = Map.of(
             "/api/admin/", List.of("ADMIN"),
@@ -66,27 +69,24 @@ public class JwtFilter implements GlobalFilter {
 
         String token = authHeader.substring(7);
 
-        System.out.println("TOKEN EXTRACTED");
-
         boolean valid = jwtUtil.validateToken(token);
 
-        System.out.println("TOKEN VALID = " + valid);
-
         if (!valid) {
-            System.out.println("JWT FAILED");
             exchange.getResponse()
                     .setStatusCode(HttpStatus.UNAUTHORIZED);
 
             return exchange.getResponse().setComplete();
         }
 
-        System.out.println("JWT PASSED");
+        /* check for revoked token */
+        if(tokenBlacklistService.isBlacklisted(token)){
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
 
-        String username =
-                jwtUtil.extractUsername(token);
+        String username = jwtUtil.extractUsername(token);
 
-        String role =
-                jwtUtil.extractRole(token);
+        String role = jwtUtil.extractRole(token);
 
         // ROLE based AUTHORIZATION
         String matchedPath = ROLE_ACCESS
