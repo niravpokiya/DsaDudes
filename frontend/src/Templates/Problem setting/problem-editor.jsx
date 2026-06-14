@@ -529,12 +529,24 @@ target = 9
                     Select only the tags that help users discover this problem.
                   </p>
                 </div>
+                
+                <div className="problem-editor-topic-header-actions">
+                  {topics.length > 0 ? (
+                    <button type="button" onClick={clearTopics} className="problem-editor-topic-clear">
+                      Clear all
+                    </button>
+                  ) : null}
 
-                {topics.length > 0 ? (
-                  <button type="button" onClick={clearTopics} className="problem-editor-topic-clear">
-                    Clear all
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={loading || saving}
+                    className="problem-editor-save-button"
+                  >
+                    {saving ? "Saving..." : "Save Problem"}
                   </button>
-                ) : null}
+                </div>
+                
               </div>
 
               <input
@@ -576,6 +588,7 @@ target = 9
                   );
                 })}
               </div>
+
             </div>
           </div>
         ) : null}
