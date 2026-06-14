@@ -24,6 +24,11 @@ public class SubmissionController {
         return submissionService.getUserSubmissions(userId);
     }
 
+    @GetMapping("/problem/{slug}")
+    public List<Submission> getSubmissionsByProblemSlug(@PathVariable String slug) {
+        return submissionService.getSubmissionsByProblemSlug(slug);
+    }
+
     @GetMapping("/{userId}/count")
     public int getSubmissionsCountByUser(@PathVariable int userId) {
         List<Submission> submissions = submissionService.getUserSubmissions(userId);

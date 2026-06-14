@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-@FeignClient(name = "submission-service", url = "http://localhost:8082")
+@FeignClient(name = "Execution-Submission-Service", path = "/api/submissions")
 @Component
 public interface SubmissionClient {
     @PostMapping("/add")

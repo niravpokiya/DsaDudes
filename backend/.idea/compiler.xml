@@ -10,17 +10,6 @@
         <module name="api-gateway" />
         <module name="service-registry" />
       </profile>
-      <profile name="Annotation profile for User-service" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.32/lombok-1.18.32.jar" />
-        </processorPath>
-        <module name="User-service" />
-        <module name="Code-Execution-Service" />
-        <module name="Question-service" />
-      </profile>
       <profile name="Annotation profile for Execution-worker-Service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -30,6 +19,17 @@
         </processorPath>
         <module name="Execution-worker-Service" />
         <module name="Execution-Submission-Service" />
+      </profile>
+      <profile name="Annotation profile for User-service" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.32/lombok-1.18.32.jar" />
+        </processorPath>
+        <module name="User-service" />
+        <module name="Question-service" />
+        <module name="Code-Execution-Service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

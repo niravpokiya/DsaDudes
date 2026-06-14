@@ -2,6 +2,8 @@ package com.DsaDude.Execution_worker_Service.DTO;
 
 import lombok.Data;
 
+import java.util.List;
+
 
 @Data
 public class SubmissionUpdate {
@@ -14,5 +16,7 @@ public class SubmissionUpdate {
     Integer passedTestCases;
 
     String errorMessage; // if runtime error
+
+    List<TestcaseResult> testcaseResults;
 }
 

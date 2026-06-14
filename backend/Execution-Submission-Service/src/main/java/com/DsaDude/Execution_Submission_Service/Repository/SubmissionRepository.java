@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface SubmissionRepository extends MongoRepository<Submission, String> {
     public List<Submission> findByUserId(int userId);
+    public List<Submission> findByProblemSlug(String problemSlug);
 }

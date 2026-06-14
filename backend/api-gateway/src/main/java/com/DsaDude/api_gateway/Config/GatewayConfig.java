@@ -18,30 +18,30 @@ public class GatewayConfig {
                 // User Service
                 .route("user-service", r -> r
                         .path("/api/user/**")
-                        .uri("http://localhost:8084"))
+                        .uri("lb://User-service"))
 
                 .route("auth-service", r -> r
                         .path("/api/auth/**")
-                        .uri("http://localhost:8084"))
+                        .uri("lb://User-service"))
 
                 // Question Service
                 .route("question-service", r -> r
                         .path("/api/question/**")
-                        .uri("http://localhost:8081"))
+                        .uri("lb://question-service"))
 
                 // Submission Service
                 .route("submission-service", r -> r
                         .path("/api/submissions/**")
-                        .uri("http://localhost:8092"))
+                        .uri("lb://Execution-Submission-Service"))
 
                 .route("solved-service", r -> r
                         .path("/api/solved/**")
-                        .uri("http://localhost:8092"))
+                        .uri("lb://Execution-Submission-Service"))
 
                 // Code Execution
                 .route("execution-service", r -> r
                         .path("/api/code/**")
-                        .uri("http://localhost:8092"))
+                        .uri("lb://Execution-Submission-Service"))
 
                 .build();
     }

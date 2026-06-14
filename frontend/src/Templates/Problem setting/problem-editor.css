@@ -444,43 +444,12 @@
   min-width: 0 !important;
 }
 
-.problem-editor-pane--editor .w-md-editor-text {
-  overflow-x: auto !important;
-}
-
 .problem-editor-pane--editor .w-md-editor-text-pre,
 .problem-editor-pane--editor .w-md-editor-text-input {
-  display: block !important;
-  white-space: pre !important;
-  overflow-x: auto !important;
-  overflow-wrap: normal !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word !important;
   word-break: normal !important;
   tab-size: 2;
-}
-
-.problem-editor-pane--editor .w-md-editor-text-pre pre,
-.problem-editor-pane--editor .w-md-editor-text-pre code,
-.problem-editor-pane--editor .w-md-editor-text-pre span {
-  display: inline !important;
-  width: auto !important;
-  min-width: 0 !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  white-space: inherit !important;
-  overflow: visible !important;
-  overflow-wrap: normal !important;
-  word-break: normal !important;
-}
-
-.problem-editor-pane--editor .w-md-editor-text-pre > code,
-.problem-editor-pane--editor .w-md-editor-text-pre > pre {
-  display: block !important;
-  width: 100% !important;
 }
 
 @media (max-width: 1100px) {

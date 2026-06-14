@@ -2,7 +2,7 @@ package com.DsaDude.Execution_Submission_Service.DTO;
 
 import lombok.Data;
 
-import java.util.Date;
+import java.util.List;
 
 @Data
 public class SubmissionUpdateDTO {
@@ -15,4 +15,6 @@ public class SubmissionUpdateDTO {
     Integer passedTestCases;
 
     String errorMessage; // if runtime error
+
+    List<TestcaseResultDTO> testcaseResults;
 }

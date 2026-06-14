@@ -14,6 +14,7 @@ import java.util.concurrent.*;
 public class ContainerPoolManager {
 
     private final int POOL_SIZE = 8;
+    private static final int DOCKER_EXEC_TIMEOUT_SECONDS = 20;
     private final BlockingQueue<String> availableContainers =
             new LinkedBlockingQueue<>();
     private final ExecutorService executor =
@@ -41,6 +42,12 @@ public class ContainerPoolManager {
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "-dit",
                 "--name", name,
+                "--network", "none",
+                "--memory", "256m",
+                "--cpus", "1",
+                "--pids-limit", "128",
+                "--security-opt", "no-new-privileges",
+                "--cap-drop", "ALL",
                 "cpp-runner", "/bin/bash"
         );
 
@@ -90,75 +97,84 @@ public class ContainerPoolManager {
             ExecutionJob job) throws Exception {
 
 
+        String language = normalizeLanguage(job.getLanguage());
+        if (language == null) {
+            return new ExecutionResult("", 0, "Unsupported language: " + job.getLanguage(), "UNSUPPORTED_LANGUAGE");
+        }
+
         Path tempDir = Files.createTempDirectory("exec-");
-        String sourceFileName = getSourceFileName(job.getLanguage());
+        String sourceFileName = getSourceFileName(language);
         Path sourceFile = tempDir.resolve(sourceFileName);
         Path inputFile = tempDir.resolve("input.txt");
 
-        Files.writeString(sourceFile, job.getSourceCode());
-        Files.writeString(inputFile,
-                job.getInput() == null ? "" : job.getInput());
+        try {
+            Files.writeString(sourceFile, job.getSourceCode());
+            Files.writeString(inputFile,
+                    job.getInput() == null ? "" : job.getInput());
 
-        long start = System.currentTimeMillis();
+            long start = System.currentTimeMillis();
 
-        // Copy files to /workspace inside container
-        new ProcessBuilder("docker", "cp",
-                sourceFile.toString(),
-                containerName + ":/workspace/" + sourceFileName)
-                .start().waitFor();
+            // Copy files to /workspace inside container
+            runDockerCommand(new ProcessBuilder("docker", "cp",
+                    sourceFile.toString(),
+                    containerName + ":/workspace/" + sourceFileName));
 
-        new ProcessBuilder("docker", "cp",
-                inputFile.toString(),
-                containerName + ":/workspace/input.txt")
-                .start().waitFor();
+            runDockerCommand(new ProcessBuilder("docker", "cp",
+                    inputFile.toString(),
+                    containerName + ":/workspace/input.txt"));
 
-        String execCommand = buildExecutionCommand(job.getLanguage(), sourceFileName);
+            String execCommand = buildExecutionCommand(language, sourceFileName);
 
-        // Execute inside container
-        ProcessBuilder pb = new ProcessBuilder(
-                "docker", "exec",
-                containerName,
-                "bash", "-c",
-                execCommand
-        );
+            // Execute inside container
+            ProcessBuilder pb = new ProcessBuilder(
+                    "docker", "exec",
+                    containerName,
+                    "bash", "-c",
+                    execCommand
+            );
+            pb.redirectErrorStream(true);
 
-        Process process = pb.start();
+            Process process = pb.start();
+            CompletableFuture<String> outputFuture =
+                    CompletableFuture.supplyAsync(() -> readLimitedOutputQuietly(process));
 
-        StringBuilder output = new StringBuilder();
-        try (BufferedReader reader =
-                     new BufferedReader(
-                             new InputStreamReader(
-                                     process.getInputStream()))) {
+            boolean finished = process.waitFor(DOCKER_EXEC_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            long duration =
+                    System.currentTimeMillis() - start;
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
+            if (!finished) {
+                process.destroyForcibly();
+                return new ExecutionResult("", duration, "Execution worker timed out", "SYSTEM_ERROR");
+            }
+
+            int exitCode = process.exitValue();
+            String output = outputFuture.get(2, TimeUnit.SECONDS);
+
+            return mapResult(exitCode, output, duration);
+        } finally {
+            try {
+                // Cleanup inside container
+                new ProcessBuilder("docker", "exec",
+                        containerName,
+                        "bash", "-c",
+                        "cd /workspace && rm -f main.cpp Main.java solution.py solution.js main Main.class input.txt output.txt compile_error.txt runtime_error.txt")
+                        .start().waitFor();
+            } catch (Exception ignored) {
+            }
+
+            try {
+                // Cleanup host temp files
+                Files.deleteIfExists(sourceFile);
+                Files.deleteIfExists(inputFile);
+                Files.deleteIfExists(tempDir);
+            } catch (Exception ignored) {
             }
         }
-
-        int exitCode = process.waitFor();
-        long duration =
-                System.currentTimeMillis() - start;
-
-        // Cleanup inside container
-        new ProcessBuilder("docker", "exec",
-                containerName,
-                "bash", "-c",
-                "cd /workspace && rm -f main.cpp main input.txt output.txt compile_error.txt runtime_error.txt execution_time.txt execution_status.txt")
-                .start().waitFor();
-
-        // Cleanup host temp files
-        Files.deleteIfExists(sourceFile);
-        Files.deleteIfExists(inputFile);
-        Files.deleteIfExists(tempDir);
-        
-        return mapResult(exitCode, output.toString(), duration);
     }
 
     private String getSourceFileName(String language) {
-        switch (language.toLowerCase()) {
+        switch (language) {
             case "cpp":
-            case "c++":
                 return "main.cpp";
             case "java":
                 return "Main.java";
@@ -166,19 +182,19 @@ public class ContainerPoolManager {
             case "py":
                 return "solution.py";
             case "javascript":
-            case "js":
                 return "solution.js";
             default:
-                return "main.cpp"; // default to C++
+                throw new IllegalArgumentException("Unsupported language: " + language);
         }
     }
 
     private String buildExecutionCommand(String language, String sourceFileName) {
-        switch (language.toLowerCase()) {
+        switch (language) {
             case "cpp":
-            case "c++":
                 return "cd /workspace && " +
-                        "g++ " + sourceFileName + " -o main 2> compile_error.txt; " +
+                        "timeout 10s g++ " + sourceFileName + " -o main 2> compile_error.txt; " +
+                        "COMPILE_EXIT=$?; " +
+                        "if [ $COMPILE_EXIT -eq 124 ]; then echo 'Compilation timed out'; exit 1; fi; " +
                         "if [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi; " +
                         "timeout 2s ./main < input.txt > output.txt 2> runtime_error.txt; " +
                         "EXIT_CODE=$?; " +
@@ -187,7 +203,9 @@ public class ContainerPoolManager {
                         "cat output.txt";
             case "java":
                 return "cd /workspace && " +
-                        "javac " + sourceFileName + " 2> compile_error.txt; " +
+                        "timeout 10s javac " + sourceFileName + " 2> compile_error.txt; " +
+                        "COMPILE_EXIT=$?; " +
+                        "if [ $COMPILE_EXIT -eq 124 ]; then echo 'Compilation timed out'; exit 1; fi; " +
                         "if [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi; " +
                         "timeout 2s java Main < input.txt > output.txt 2> runtime_error.txt; " +
                         "EXIT_CODE=$?; " +
@@ -195,7 +213,6 @@ public class ContainerPoolManager {
                         "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
                         "cat output.txt";
             case "python":
-            case "py":
                 return "cd /workspace && " +
                         "timeout 2s python3 " + sourceFileName + " < input.txt > output.txt 2> runtime_error.txt; " +
                         "EXIT_CODE=$?; " +
@@ -203,7 +220,6 @@ public class ContainerPoolManager {
                         "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
                         "cat output.txt";
             case "javascript":
-            case "js":
                 return "cd /workspace && " +
                         "timeout 2s node " + sourceFileName + " < input.txt > output.txt 2> runtime_error.txt; " +
                         "EXIT_CODE=$?; " +
@@ -211,8 +227,7 @@ public class ContainerPoolManager {
                         "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
                         "cat output.txt";
             default:
-                return "cd /workspace && " +
-                        "echo 'Unsupported language: " + language + "'; exit 1";
+                throw new IllegalArgumentException("Unsupported language: " + language);
         }
     }
 
@@ -237,5 +252,55 @@ public class ContainerPoolManager {
                             "Unknown Error: " + output,
                             "ERROR");
         };
+    }
+
+    private String normalizeLanguage(String language) {
+        if (language == null) {
+            return null;
+        }
+
+        return switch (language.toLowerCase()) {
+            case "cpp", "c++" -> "cpp";
+            case "java" -> "java";
+            case "python", "py" -> "python";
+            case "javascript", "js" -> "javascript";
+            default -> null;
+        };
+    }
+
+    private void runDockerCommand(ProcessBuilder processBuilder) throws Exception {
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
+        CompletableFuture<String> outputFuture =
+                CompletableFuture.supplyAsync(() -> readLimitedOutputQuietly(process));
+        boolean finished = process.waitFor(DOCKER_EXEC_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (!finished) {
+            process.destroyForcibly();
+            throw new RuntimeException("Docker command timed out");
+        }
+        String output = outputFuture.get(2, TimeUnit.SECONDS);
+        if (process.exitValue() != 0) {
+            throw new RuntimeException("Docker command failed: " + output);
+        }
+    }
+
+    private String readLimitedOutputQuietly(Process process) {
+        try {
+            return readLimitedOutput(process);
+        } catch (IOException e) {
+            return e.getMessage();
+        }
+    }
+
+    private String readLimitedOutput(Process process) throws IOException {
+        StringBuilder output = new StringBuilder();
+        try (Reader reader = new InputStreamReader(process.getInputStream())) {
+            char[] buffer = new char[4096];
+            int read;
+            while ((read = reader.read(buffer)) != -1) {
+                    output.append(buffer, 0, read);
+            }
+        }
+        return output.toString();
     }
 }

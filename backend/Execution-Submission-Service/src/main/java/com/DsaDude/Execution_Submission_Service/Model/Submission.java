@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -34,5 +35,6 @@ public class Submission {
     private int failedTestcases;
 
     private String errorMessage;   // compilation error / runtime error
+    private List<TestcaseResult> testcaseResults;
     private Date submissionTime;   // epoch millis
 }
