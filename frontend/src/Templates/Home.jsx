@@ -2,12 +2,10 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Flame,
-  Globe2,
   Medal,
   Plus,
   Sparkles,
   Target,
-  Trophy,
 } from "lucide-react";
 
 const stats = [
@@ -24,20 +22,6 @@ const stats = [
     meta: "days active",
     icon: Flame,
     tone: "saas-card--amber",
-  },
-  {
-    label: "Contest Rating",
-    value: "1,842",
-    meta: "top 18%",
-    icon: Trophy,
-    tone: "saas-card--green",
-  },
-  {
-    label: "Global Rank",
-    value: "#4.2k",
-    meta: "up 216 spots",
-    icon: Globe2,
-    tone: "saas-card--violet",
   },
 ];
 

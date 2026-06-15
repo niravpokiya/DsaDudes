@@ -98,6 +98,8 @@ const SubmissionDetail = () => {
     });
   };
 
+  const getSubmittedAt = (submission) => submission?.submissionTime || submission?.createdAt || submission?.timestamp;
+
   const formatMemory = (memory) => {
     if (!memory || memory === 0) return 'N/A';
     if (memory > 1024) return `${(memory / 1024).toFixed(2)} GB`;
@@ -174,6 +176,7 @@ const SubmissionDetail = () => {
   const codeLines = submission.sourceCode ? submission.sourceCode.split('\n') : [];
   const displayLines = showFullCode ? codeLines : codeLines.slice(0, 50);
   const testcaseCounts = getTestcaseCounts(submission);
+  const submittedAt = getSubmittedAt(submission);
 
   return (
     <div className="sd-page">
@@ -207,6 +210,10 @@ const SubmissionDetail = () => {
             <div className="sd-stat-box">
               <div className="sd-stat-label">Memory Used</div>
               <div className="sd-stat-value">{formatMemory(submission.memoryUsed)}</div>
+            </div>
+            <div className="sd-stat-box">
+              <div className="sd-stat-label">Submitted</div>
+              <div className="sd-stat-value">{formatDate(submittedAt)}</div>
             </div>
             <div className="sd-stat-box">
               <div className="sd-stat-label">Code Length</div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, CheckCircle2, Flame, Trophy } from "lucide-react";
+import { Activity, CheckCircle2, Flame } from "lucide-react";
 import { user_submission_heatmap, user_submissions_stats } from "../../utils/submission-apis";
 
 const Stat = ({ label, value, meta, icon: Icon, tone }) => (
@@ -83,7 +83,6 @@ const ProfileStats = ({ user }) => {
       <Stat label="Problems solved" value={solvedTotal} meta="All time accepted" icon={CheckCircle2} tone="saas-card--green" />
       <Stat label="Submissions" value={submissionTotal} meta="Last 12 months" icon={Activity} tone="saas-card--blue" />
       <Stat label="Current streak" value={currentStreak} meta="Practice days" icon={Flame} tone="saas-card--amber" />
-      <Stat label="Contest rating" value="1,842" meta="Estimated rank" icon={Trophy} tone="saas-card--violet" />
     </div>
   );
 };

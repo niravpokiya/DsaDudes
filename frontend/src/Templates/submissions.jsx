@@ -7,6 +7,8 @@ import "./submissions.css";
 
 const PAGE_SIZE = 20;
 
+const getSubmittedAt = (submission) => submission?.submissionTime || submission?.createdAt || submission?.timestamp;
+
 const SubmissionsList = () => {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
@@ -60,17 +62,23 @@ const SubmissionsList = () => {
     return timeStr || memoryStr || "N/A";
   };
 
-  const formatDate = (timestamp) => {
+  const formatDateTime = (timestamp) => {
     if (!timestamp) return "Unknown";
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return "Unknown";
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const filteredSubmissions = useMemo(() => {
     const lowerQuery = query.trim().toLowerCase();
     return [...submissions]
-      .sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime())
+      .sort((a, b) => new Date(getSubmittedAt(b) || 0).getTime() - new Date(getSubmittedAt(a) || 0).getTime())
       .filter((submission) => {
         const title = formatProblemTitle(submission.problemSlug).toLowerCase();
         const verdict = submission.verdict || "PENDING";
@@ -194,7 +202,7 @@ const SubmissionsList = () => {
                     </td>
                     <td><span className="tag">{submission.language ? submission.language.toUpperCase() : "Unknown"}</span></td>
                     <td><div className="submission-performance">{formatPerformance(submission)}</div></td>
-                    <td><div className="submission-date">{formatDate(submission.createdAt)}</div></td>
+                    <td><div className="submission-date">{formatDateTime(getSubmittedAt(submission))}</div></td>
                   </tr>
                 );
               })}

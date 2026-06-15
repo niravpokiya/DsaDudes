@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
 @Component
@@ -92,6 +94,99 @@ public class ContainerPoolManager {
         }, executor);
     }
 
+    public CompletableFuture<List<ExecutionResult>> executeSubmissionTestcases(
+            ExecutionJob job,
+            List<String> inputs) {
+
+        return CompletableFuture.supplyAsync(() -> {
+
+            String containerName = null;
+
+            try {
+                containerName = availableContainers.take();
+                return runSubmissionInsideContainer(containerName, job, inputs);
+            } catch (Exception e) {
+                List<ExecutionResult> results = new ArrayList<>();
+                for (int i = 0; i < inputs.size(); i++) {
+                    results.add(new ExecutionResult("", 0, e.getMessage(), "SYSTEM_ERROR"));
+                }
+                return results;
+            } finally {
+                if (containerName != null) {
+                    availableContainers.add(containerName);
+                }
+            }
+
+        }, executor);
+    }
+
+    private List<ExecutionResult> runSubmissionInsideContainer(
+            String containerName,
+            ExecutionJob job,
+            List<String> inputs) throws Exception {
+
+        String language = normalizeLanguage(job.getLanguage());
+        if (language == null) {
+            return repeatedResult(inputs.size(),
+                    new ExecutionResult("", 0, "Unsupported language: " + job.getLanguage(), "UNSUPPORTED_LANGUAGE"));
+        }
+
+        Path tempDir = Files.createTempDirectory("exec-submit-");
+        String sourceFileName = getSourceFileName(language);
+        Path sourceFile = tempDir.resolve(sourceFileName);
+        Path inputFile = tempDir.resolve("input.txt");
+
+        try {
+            Files.writeString(sourceFile, job.getSourceCode());
+
+            runDockerCommand(new ProcessBuilder("docker", "cp",
+                    sourceFile.toString(),
+                    containerName + ":/workspace/" + sourceFileName));
+
+            String compileCommand = buildCompileCommand(language, sourceFileName);
+            if (compileCommand != null) {
+                ExecutionResult compileResult = runDockerExecCommand(containerName, compileCommand);
+                if (!"SUCCESS".equals(compileResult.getStatus())) {
+                    return repeatedResult(inputs.size(), compileResult);
+                }
+            }
+
+            List<ExecutionResult> results = new ArrayList<>();
+            String runCommand = buildRunCommand(language, sourceFileName);
+
+            for (String input : inputs) {
+                Files.writeString(inputFile, input == null ? "" : input);
+                runDockerCommand(new ProcessBuilder("docker", "cp",
+                        inputFile.toString(),
+                        containerName + ":/workspace/input.txt"));
+                results.add(runDockerExecCommand(containerName, runCommand));
+            }
+
+            return results;
+        } finally {
+            cleanupWorkspace(containerName);
+
+            try {
+                Files.deleteIfExists(sourceFile);
+                Files.deleteIfExists(inputFile);
+                Files.deleteIfExists(tempDir);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private List<ExecutionResult> repeatedResult(int count, ExecutionResult result) {
+        List<ExecutionResult> results = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            results.add(new ExecutionResult(
+                    result.getOutput(),
+                    i == 0 ? result.getExecutionTimeMs() : 0,
+                    result.getError(),
+                    result.getStatus()));
+        }
+        return results;
+    }
+
     private ExecutionResult runInsideContainer(
             String containerName,
             ExecutionJob job) throws Exception {
@@ -152,15 +247,7 @@ public class ContainerPoolManager {
 
             return mapResult(exitCode, output, duration);
         } finally {
-            try {
-                // Cleanup inside container
-                new ProcessBuilder("docker", "exec",
-                        containerName,
-                        "bash", "-c",
-                        "cd /workspace && rm -f main.cpp Main.java solution.py solution.js main Main.class input.txt output.txt compile_error.txt runtime_error.txt")
-                        .start().waitFor();
-            } catch (Exception ignored) {
-            }
+            cleanupWorkspace(containerName);
 
             try {
                 // Cleanup host temp files
@@ -191,44 +278,99 @@ public class ContainerPoolManager {
     private String buildExecutionCommand(String language, String sourceFileName) {
         switch (language) {
             case "cpp":
+                return buildCompileCommand(language, sourceFileName) + "; " + buildRunCommand(language, sourceFileName);
+            case "java":
+                return buildCompileCommand(language, sourceFileName) + "; " + buildRunCommand(language, sourceFileName);
+            case "python":
+            case "javascript":
+                return buildRunCommand(language, sourceFileName);
+            default:
+                throw new IllegalArgumentException("Unsupported language: " + language);
+        }
+    }
+
+    private String buildCompileCommand(String language, String sourceFileName) {
+        switch (language) {
+            case "cpp":
                 return "cd /workspace && " +
                         "timeout 10s g++ " + sourceFileName + " -o main 2> compile_error.txt; " +
                         "COMPILE_EXIT=$?; " +
                         "if [ $COMPILE_EXIT -eq 124 ]; then echo 'Compilation timed out'; exit 1; fi; " +
-                        "if [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi; " +
-                        "timeout 2s ./main < input.txt > output.txt 2> runtime_error.txt; " +
-                        "EXIT_CODE=$?; " +
-                        "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
-                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
-                        "cat output.txt";
+                        "if [ $COMPILE_EXIT -ne 0 ] || [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi";
             case "java":
                 return "cd /workspace && " +
                         "timeout 10s javac " + sourceFileName + " 2> compile_error.txt; " +
                         "COMPILE_EXIT=$?; " +
                         "if [ $COMPILE_EXIT -eq 124 ]; then echo 'Compilation timed out'; exit 1; fi; " +
-                        "if [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi; " +
+                        "if [ $COMPILE_EXIT -ne 0 ] || [ -s compile_error.txt ]; then cat compile_error.txt; exit 1; fi";
+            case "python":
+            case "javascript":
+                return null;
+            default:
+                throw new IllegalArgumentException("Unsupported language: " + language);
+        }
+    }
+
+    private String buildRunCommand(String language, String sourceFileName) {
+        switch (language) {
+            case "cpp":
+                return "cd /workspace && " +
+                        "timeout 2s ./main < input.txt > output.txt 2> runtime_error.txt; " +
+                        "EXIT_CODE=$?; " +
+                        "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
+                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; rm -f runtime_error.txt output.txt; exit 2; fi; " +
+                        "cat output.txt; rm -f runtime_error.txt output.txt";
+            case "java":
+                return "cd /workspace && " +
                         "timeout 2s java Main < input.txt > output.txt 2> runtime_error.txt; " +
                         "EXIT_CODE=$?; " +
                         "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
-                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
-                        "cat output.txt";
+                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; rm -f runtime_error.txt output.txt; exit 2; fi; " +
+                        "cat output.txt; rm -f runtime_error.txt output.txt";
             case "python":
                 return "cd /workspace && " +
                         "timeout 2s python3 " + sourceFileName + " < input.txt > output.txt 2> runtime_error.txt; " +
                         "EXIT_CODE=$?; " +
                         "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
-                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
-                        "cat output.txt";
+                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; rm -f runtime_error.txt output.txt; exit 2; fi; " +
+                        "cat output.txt; rm -f runtime_error.txt output.txt";
             case "javascript":
                 return "cd /workspace && " +
                         "timeout 2s node " + sourceFileName + " < input.txt > output.txt 2> runtime_error.txt; " +
                         "EXIT_CODE=$?; " +
                         "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi; " +
-                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; exit 2; fi; " +
-                        "cat output.txt";
+                        "if [ -s runtime_error.txt ]; then cat runtime_error.txt; rm -f runtime_error.txt output.txt; exit 2; fi; " +
+                        "cat output.txt; rm -f runtime_error.txt output.txt";
             default:
                 throw new IllegalArgumentException("Unsupported language: " + language);
         }
+    }
+
+    private ExecutionResult runDockerExecCommand(String containerName, String command) throws Exception {
+        long start = System.currentTimeMillis();
+        ProcessBuilder pb = new ProcessBuilder(
+                "docker", "exec",
+                containerName,
+                "bash", "-c",
+                command
+        );
+        pb.redirectErrorStream(true);
+
+        Process process = pb.start();
+        CompletableFuture<String> outputFuture =
+                CompletableFuture.supplyAsync(() -> readLimitedOutputQuietly(process));
+
+        boolean finished = process.waitFor(DOCKER_EXEC_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        long duration = System.currentTimeMillis() - start;
+
+        if (!finished) {
+            process.destroyForcibly();
+            return new ExecutionResult("", duration, "Execution worker timed out", "SYSTEM_ERROR");
+        }
+
+        int exitCode = process.exitValue();
+        String output = outputFuture.get(2, TimeUnit.SECONDS);
+        return mapResult(exitCode, output, duration);
     }
 
     private ExecutionResult mapResult(
@@ -281,6 +423,17 @@ public class ContainerPoolManager {
         String output = outputFuture.get(2, TimeUnit.SECONDS);
         if (process.exitValue() != 0) {
             throw new RuntimeException("Docker command failed: " + output);
+        }
+    }
+
+    private void cleanupWorkspace(String containerName) {
+        try {
+            new ProcessBuilder("docker", "exec",
+                    containerName,
+                    "bash", "-c",
+                    "cd /workspace && rm -f main.cpp Main.java solution.py solution.js main Main.class input.txt output.txt compile_error.txt runtime_error.txt")
+                    .start().waitFor();
+        } catch (Exception ignored) {
         }
     }
 

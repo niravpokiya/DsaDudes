@@ -2,6 +2,7 @@ package com.DsaDude.Execution_worker_Service.Service;
 
 import com.DsaDude.Execution_worker_Service.Client.ExecutionSubmissionClient;
 import com.DsaDude.Execution_worker_Service.Client.QuestionServiceClient;
+import com.DsaDude.Execution_worker_Service.Client.QuestionServiceClient.QuestionDTO;
 import com.DsaDude.Execution_worker_Service.DTO.ExecutionJob;
 import com.DsaDude.Execution_worker_Service.DTO.ExecutionResult;
 import com.DsaDude.Execution_worker_Service.DTO.SubmissionUpdate;
@@ -91,7 +92,6 @@ public class CodeExecutionConsumer {
             return;
         }
 
-        List<CompletableFuture<TestcaseResult>> futures = new ArrayList<>();
         try (var stream = Files.list(problemDir)) {
             List<Path> inputFiles = stream
                     .filter(path -> path.getFileName().toString().endsWith(".in"))
@@ -103,91 +103,102 @@ public class CodeExecutionConsumer {
                 return;
             }
 
-            int testcaseNumber = 1;
+            List<String> inputs = new ArrayList<>();
             for (Path inputFile : inputFiles) {
-                int currentTestcase = testcaseNumber++;
-                String input = readFile(inputFile);
-                ExecutionJob newJob = createSubJob(job, jobId, input, inputFile.getFileName().toString());
-
-                CompletableFuture<TestcaseResult> future = executeInternal(newJob).thenCompose(result -> {
-                    if (!"SUCCESS".equals(result.getStatus())) {
-                        return CompletableFuture.completedFuture(
-                                buildTestcaseResult(currentTestcase, inputFile, input, "", result, result.getStatus())
-                        );
-                    }
-
-                    // Static Check
-                    if (questionDTO.isStaticSolution()) {
-                        String expected = readFile(problemDir.resolve(inputFile.getFileName().toString().replace(".in", ".out")));
-                        String status = isOutputMatching(expected, result.getOutput()) ? "SUCCESS" : "WRONG_ANSWER";
-                        return CompletableFuture.completedFuture(
-                                buildTestcaseResult(currentTestcase, inputFile, input, expected, result, status)
-                        );
-                    }
-
-                    // Validator Flow
-                    if (questionDTO.getChecker() == null
-                            || questionDTO.getChecker().getCode() == null
-                            || questionDTO.getChecker().getCode().isBlank()
-                            || questionDTO.getChecker().getLanguage() == null
-                            || questionDTO.getChecker().getLanguage().isBlank()) {
-                        result.setError("Custom checker is not configured");
-                        return CompletableFuture.completedFuture(
-                                buildTestcaseResult(currentTestcase, inputFile, input, "", result, "CHECKER_ERROR")
-                        );
-                    }
-
-                    ExecutionJob validatorJob = new ExecutionJob();
-                    validatorJob.setJobId(newJob.getJobId() + "_validator");
-                    validatorJob.setInput(input + "\n" + result.getOutput());
-                    validatorJob.setSourceCode(questionDTO.getChecker().getCode());
-                    validatorJob.setLanguage(questionDTO.getChecker().getLanguage());
-                    return executeInternal(validatorJob).thenApply(validatorResult -> {
-                        if (!"SUCCESS".equals(validatorResult.getStatus())) {
-                            validatorResult.setError("Checker failed: " + validatorResult.getError());
-                            return buildTestcaseResult(currentTestcase, inputFile, input, "", validatorResult, "CHECKER_ERROR");
-                        }
-
-                        String checkerOutput = normalizeOutput(validatorResult.getOutput()).toUpperCase();
-                        String status = ("1".equals(checkerOutput) || "PASS".equals(checkerOutput) || "TRUE".equals(checkerOutput))
-                                ? "SUCCESS"
-                                : "WRONG_ANSWER";
-                        return buildTestcaseResult(currentTestcase, inputFile, input, "", result, status);
-                    });
-                });
-                futures.add(future);
+                inputs.add(readFile(inputFile));
             }
 
-            processAllResults(futures, jobId, job);
+            containerPoolManager.executeSubmissionTestcases(job, inputs)
+                    .thenCompose(results -> buildTestcaseResults(inputFiles, inputs, results, questionDTO, problemDir, job, jobId))
+                    .thenAccept(testcaseResults -> processAllResults(testcaseResults, jobId, job))
+                    .exceptionally(ex -> {
+                        failSubmission(jobId, job, "SYSTEM_ERROR", ex.getMessage());
+                        return null;
+                    });
 
         } catch (Exception e) {
             failSubmission(jobId, job, "SYSTEM_ERROR", e.getMessage());
         }
     }
 
-    private ExecutionJob createSubJob(ExecutionJob job, String jobId, String input, String fileName) {
-        ExecutionJob newJob = new ExecutionJob();
-        newJob.setJobId(jobId + "_" + fileName);
-        newJob.setInput(input);
-        newJob.setSourceCode(job.getSourceCode());
-        newJob.setLanguage(job.getLanguage());
-        newJob.setProblemSlug(job.getProblemSlug());
-        return newJob;
+    private CompletableFuture<List<TestcaseResult>> buildTestcaseResults(
+            List<Path> inputFiles,
+            List<String> inputs,
+            List<ExecutionResult> results,
+            QuestionDTO questionDTO,
+            Path problemDir,
+            ExecutionJob job,
+            String jobId
+    ) {
+        List<CompletableFuture<TestcaseResult>> futures = new ArrayList<>();
+
+        for (int i = 0; i < inputFiles.size(); i++) {
+            int currentTestcase = i + 1;
+            Path inputFile = inputFiles.get(i);
+            String input = inputs.get(i);
+            ExecutionResult result = i < results.size()
+                    ? results.get(i)
+                    : new ExecutionResult("", 0, "Missing execution result", "SYSTEM_ERROR");
+
+            if (!"SUCCESS".equals(result.getStatus())) {
+                futures.add(CompletableFuture.completedFuture(
+                        buildTestcaseResult(currentTestcase, inputFile, input, "", result, result.getStatus())
+                ));
+                continue;
+            }
+
+            if (questionDTO.isStaticSolution()) {
+                String expected = readFile(problemDir.resolve(inputFile.getFileName().toString().replace(".in", ".out")));
+                String status = isOutputMatching(expected, result.getOutput()) ? "SUCCESS" : "WRONG_ANSWER";
+                futures.add(CompletableFuture.completedFuture(
+                        buildTestcaseResult(currentTestcase, inputFile, input, expected, result, status)
+                ));
+                continue;
+            }
+
+            if (questionDTO.getChecker() == null
+                    || questionDTO.getChecker().getCode() == null
+                    || questionDTO.getChecker().getCode().isBlank()
+                    || questionDTO.getChecker().getLanguage() == null
+                    || questionDTO.getChecker().getLanguage().isBlank()) {
+                result.setError("Custom checker is not configured");
+                futures.add(CompletableFuture.completedFuture(
+                        buildTestcaseResult(currentTestcase, inputFile, input, "", result, "CHECKER_ERROR")
+                ));
+                continue;
+            }
+
+            ExecutionJob validatorJob = new ExecutionJob();
+            validatorJob.setJobId(jobId + "_" + inputFile.getFileName() + "_validator");
+            validatorJob.setInput(input + "\n" + result.getOutput());
+            validatorJob.setSourceCode(questionDTO.getChecker().getCode());
+            validatorJob.setLanguage(questionDTO.getChecker().getLanguage());
+
+            futures.add(executeInternal(validatorJob).thenApply(validatorResult -> {
+                if (!"SUCCESS".equals(validatorResult.getStatus())) {
+                    validatorResult.setError("Checker failed: " + validatorResult.getError());
+                    return buildTestcaseResult(currentTestcase, inputFile, input, "", validatorResult, "CHECKER_ERROR");
+                }
+
+                String checkerOutput = normalizeOutput(validatorResult.getOutput()).toUpperCase();
+                String status = ("1".equals(checkerOutput) || "PASS".equals(checkerOutput) || "TRUE".equals(checkerOutput))
+                        ? "SUCCESS"
+                        : "WRONG_ANSWER";
+                return buildTestcaseResult(currentTestcase, inputFile, input, "", result, status);
+            }));
+        }
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(ignored -> futures.stream().map(CompletableFuture::join).toList());
     }
 
-    private void processAllResults(List<CompletableFuture<TestcaseResult>> futures, String jobId, ExecutionJob job) {
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenRun(() -> {
+    private void processAllResults(List<TestcaseResult> testcaseResults, String jobId, ExecutionJob job) {
                     int passed = 0;
                     long totalTime = 0;
                     StringBuilder errorMsg = new StringBuilder();
-                    List<TestcaseResult> testcaseResults = new ArrayList<>();
                     String finalVerdict = "WRONG_ANSWER";
 
-                    for (CompletableFuture<TestcaseResult> f : futures) {
-                        try {
-                            TestcaseResult res = f.join();
-                            testcaseResults.add(res);
+                    for (TestcaseResult res : testcaseResults) {
                             totalTime += res.getExecutionTimeMs();
                             String status = res.getStatus();
                             if ("SUCCESS".equalsIgnoreCase(status)) {
@@ -203,32 +214,24 @@ public class CodeExecutionConsumer {
                                 }
                                 errorMsg.append("\n");
                             }
-                        } catch (Exception e) {
-                            errorMsg.append(e.getMessage()).append("\n");
-                        }
                     }
 
                     SubmissionUpdate dto = new SubmissionUpdate();
-                    dto.setTotalTestCases(futures.size());
+                    dto.setTotalTestCases(testcaseResults.size());
                     dto.setPassedTestCases(passed);
                     dto.setExecutionTime(totalTime);
                     dto.setMemoryUsed(0L);
                     dto.setTestcaseResults(testcaseResults);
 
-                    if (passed == futures.size()) {
+                    if (passed == testcaseResults.size()) {
                         dto.setVerdict("ACCEPTED");
-                        redisService.markCompleted(jobId, "ACCEPTED", totalTime, job.getSourceCode(), job.getLanguage(), passed, futures.size(), "");
+                        redisService.markCompleted(jobId, "ACCEPTED", totalTime, job.getSourceCode(), job.getLanguage(), passed, testcaseResults.size(), "");
                     } else {
                         dto.setVerdict(finalVerdict);
                         dto.setErrorMessage(errorMsg.toString());
-                        redisService.markError(jobId, finalVerdict, errorMsg.toString(), totalTime, job.getSourceCode(), job.getLanguage(), passed, futures.size());
+                        redisService.markError(jobId, finalVerdict, errorMsg.toString(), totalTime, job.getSourceCode(), job.getLanguage(), passed, testcaseResults.size());
                     }
                     submissionClient.updateSubmission(jobId, dto);
-                })
-                .exceptionally(ex -> {
-                    failSubmission(jobId, job, "SYSTEM_ERROR", ex.getMessage());
-                    return null;
-                });
     }
 
     public CompletableFuture<ExecutionResult> runVisibleJob(ExecutionJob job) {
