@@ -75,7 +75,7 @@ Install these before running the project:
 ### 1. Clone The Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/niravpokiya/DsaChamp.git
 cd DSA-Platform
 ```
 
