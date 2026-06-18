@@ -166,8 +166,9 @@ export default function ProblemSidebar({
             submitting={submitting}
             onViewCode={(snapshot) => {
               if (snapshot?.sourceCode) {
+                const language = snapshot.language?.toLowerCase?.() || "cpp";
                 setCode(snapshot.sourceCode);
-                setLanguage("cpp");
+                setLanguage(language);
                 setActiveTab("description");
               }
             }}

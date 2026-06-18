@@ -1,6 +1,13 @@
 import Editor from "@monaco-editor/react";
 import { Code2, Play, Send } from "lucide-react";
 import { useTheme } from "../Context/themeContext";
+import languageSnippets from "../snippets/snippet";
+
+const languageOptions = [
+  { value: "cpp", label: "C++" },
+  { value: "java", label: "Java" },
+  { value: "python", label: "Python" },
+];
 
 export default function EditorArea({
   problem,
@@ -31,6 +38,8 @@ export default function EditorArea({
   const selectedOutput = sampleOutputs[selectedTest];
   const currentOutput = selectedOutput?.output || "(no output)";
   const currentError = selectedOutput?.error || "";
+  const selectedLanguageLabel =
+    languageOptions.find((option) => option.value === language)?.label || "Code";
 
   return (
     <div className="editor-shell animate-fadeInRight">
@@ -39,15 +48,18 @@ export default function EditorArea({
           <Code2 size={18} />
           <div>
             <strong>Editor</strong>
-            <span>C++ solution workspace</span>
+            <span>{selectedLanguageLabel} solution workspace</span>
           </div>
           <select
             value={language}
-            onChange={() => setLanguage("cpp")}
-            disabled
+            onChange={(event) => setLanguage(event.target.value)}
             className="editor-select"
           >
-            <option value="cpp">C++</option>
+            {languageOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -67,7 +79,7 @@ export default function EditorArea({
         <Editor
           height="100%"
           width="100%"
-          language={language}
+          language={languageSnippets[language]?.monacoLanguage || language}
           value={code}
           onChange={(value) => setCode(value)}
           theme={currentMode === "dark" ? "vs-dark" : "light"}

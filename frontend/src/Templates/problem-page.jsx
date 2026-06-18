@@ -9,12 +9,22 @@ import ProblemSidebar from "./problem-sidebar";
 import { api } from "../utils/api";
 import { increment_submission_count } from "../utils/submission-apis";
 
+const EDITOR_LANGUAGE_KEY = "dsaChampEditorLanguage";
+
+function getSavedEditorLanguage() {
+  const savedLanguage = localStorage.getItem(EDITOR_LANGUAGE_KEY);
+  return languageSnippets[savedLanguage] ? savedLanguage : "cpp";
+}
+
 export default function ProblemsPage() {
   const { slug } = useParams();
   const workspaceRef = useRef(null);
   const [problem, setProblem] = useState(null);
-  const [language, setLanguage] = useState("cpp");
-  const [code, setCode] = useState(languageSnippets["cpp"].code);
+  const [language, setLanguage] = useState(getSavedEditorLanguage);
+  const [code, setCode] = useState(() => {
+    const initialLanguage = getSavedEditorLanguage();
+    return languageSnippets[initialLanguage].code;
+  });
   const [running, setRunning] = useState(false);
   const [selectedTest, setSelectedTest] = useState(0);
   const [sampleOutputs, setSampleOutputs] = useState([]);
@@ -92,10 +102,6 @@ export default function ProblemsPage() {
         return "difficulty-easy";
     }
   };
-
-  useEffect(() => {
-    setLanguage("cpp");
-  }, [setLanguage]);
 
   useEffect(() => {
     const fetchProblem = async () => {
@@ -176,7 +182,13 @@ export default function ProblemsPage() {
   }, [activeTab, user?.id, slug, hasLoadedSubmissions, loadingSubmissions]);
 
   useEffect(() => {
-    setCode(languageSnippets[language].code);
+    setCode(languageSnippets[language]?.code || languageSnippets.cpp.code);
+  }, [language]);
+
+  useEffect(() => {
+    if (languageSnippets[language]) {
+      localStorage.setItem(EDITOR_LANGUAGE_KEY, language);
+    }
   }, [language]);
 
   useEffect(() => {

@@ -7,7 +7,7 @@ public class ExecutionResult {
 
     private String output;
     private long executionTimeMs;
-    private String error;   // NEW
+    private String error;
     private String status;
 
     public ExecutionResult(String output, long executionTimeMs, String error, String status) {

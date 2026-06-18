@@ -32,7 +32,7 @@ public class JobController {
                 new JobResponse(jobId, "QUEUED")
         );
     }
-    // submit the code here...
+    // user submitss the code here...
     @PostMapping("/submit")
     public ResponseEntity<JobResponse> submitCode(@RequestBody ExecutionJob request) throws Exception {
         return jobProducer.submitCode(request);

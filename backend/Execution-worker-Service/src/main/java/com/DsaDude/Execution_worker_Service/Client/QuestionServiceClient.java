@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "question-service", url = "http://localhost:8081/api/question")
+@FeignClient(name = "question-service", path = "/api/question")
 @Component
 public interface QuestionServiceClient {
     @GetMapping("/{slug}")

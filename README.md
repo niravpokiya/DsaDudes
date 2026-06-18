@@ -139,14 +139,34 @@ Create or connect to a MongoDB database for:
 
 Update the MongoDB URI in Question Service and Execution Submission Service configuration.
 
-### 6. Build The Code Runner Image
+### 6. Build The Code Runner Images
 
-The execution worker expects a Docker image named `cpp-runner`.
+Build the local runner images used for isolated code execution.
+
+On Windows PowerShell:
+
+```powershell
+.\DsaChamp-local-config\build-runners.ps1
+```
+
+Or build them manually:
 
 ```bash
 cd DsaChamp-local-config/cpp-runner
 docker build -t cpp-runner .
+
+cd ../java-runner
+docker build -t java-runner .
+
+cd ../python-runner
+docker build -t python-runner .
 ```
+
+When Execution Worker Service starts, it creates separate container pools for each supported language:
+
+- `cpp-runner-1` through `cpp-runner-8`
+- `java-runner-1` through `java-runner-8`
+- `python-runner-1` through `python-runner-8`
 
 ### 7. Start Backend Services
 
@@ -223,7 +243,7 @@ http://localhost:5173
 
 - Consumes execution jobs from Kafka
 - Executes user code in Docker containers
-- Supports C++, Java, Python, and JavaScript
+- Supports C++, Java, and Python
 - Applies timeout/resource limits through the containerized execution flow
 - Updates Redis and final submission results
 
@@ -264,7 +284,11 @@ DSA-Platform/
     Execution-worker-Service/       Kafka consumer and Docker execution
   DsaChamp-local-config/
     docker-compose.yml              Redis and Kafka
-    cpp-runner/                     Code runner Docker image
+    build-runners.ps1               Windows runner image build script
+    build-runners.sh                Unix runner image build script
+    cpp-runner/                     C++ runner Docker image
+    java-runner/                    Java runner Docker image
+    python-runner/                  Python runner Docker image
   code-execution-architecture.png
 ```
 

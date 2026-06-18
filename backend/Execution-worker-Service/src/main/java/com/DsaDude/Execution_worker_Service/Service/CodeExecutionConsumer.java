@@ -38,12 +38,23 @@ public class CodeExecutionConsumer {
 
     @KafkaListener(topics = "execution-jobs", groupId = "executor-group")
     public void consume(ExecutionJob job) {
-        if ("RUN".equals(job.getTypeOfJob())) {
-            runVisibleJob(job);
-        } else if ("SUBMIT".equals(job.getTypeOfJob())) {
-            RunOnHiddenTestcases(job);
-        } else {
-            log.warn("Unknown job type: {} for job: {}", job.getTypeOfJob(), job.getJobId());
+        try {
+            if (job == null) {
+                log.warn("Received null execution job");
+                return;
+            }
+
+            if ("RUN".equals(job.getTypeOfJob())) {
+                runVisibleJob(job);
+            } else if ("SUBMIT".equals(job.getTypeOfJob())) {
+                RunOnHiddenTestcases(job);
+            } else {
+                log.warn("Unknown job type: {} for job: {}", job.getTypeOfJob(), job.getJobId());
+                markJobFailure(job, "SYSTEM_ERROR", "Unknown job type: " + job.getTypeOfJob());
+            }
+        } catch (Exception e) {
+            log.error("Failed to consume execution job: {}", job != null ? job.getJobId() : "null", e);
+            markJobFailure(job, "SYSTEM_ERROR", e.getMessage());
         }
     }
 
@@ -58,8 +69,7 @@ public class CodeExecutionConsumer {
     private boolean isOutputMatching(String expected, String actual) {
         if (expected == null && actual == null) return true;
         if (expected == null || actual == null) return false;
-        boolean match = normalizeOutput(expected).equals(normalizeOutput(actual));
-        return match;
+        return normalizeOutput(expected).equals(normalizeOutput(actual));
     }
 
     private String normalizeOutput(String value) {
@@ -77,44 +87,52 @@ public class CodeExecutionConsumer {
 
     public void RunOnHiddenTestcases(ExecutionJob job) {
         String jobId = job.getJobId();
-        redisService.markRunning(jobId, job.getSourceCode(), job.getLanguage(), 0, 0);
+        try {
+            redisService.markRunning(jobId, job.getSourceCode(), job.getLanguage(), 0, 0);
 
-        String slug = job.getProblemSlug();
-        var questionDTO = questionServiceClient.getQuestionBySlug(slug).getData();
-        if (questionDTO == null) {
-            failSubmission(jobId, job, "SYSTEM_ERROR", "Question metadata not found");
-            return;
-        }
-
-        Path problemDir = Path.of(basePath).toAbsolutePath().normalize().resolve(slug);
-        if (!Files.exists(problemDir)) {
-            failSubmission(jobId, job, "SYSTEM_ERROR", "Testcases not found");
-            return;
-        }
-
-        try (var stream = Files.list(problemDir)) {
-            List<Path> inputFiles = stream
-                    .filter(path -> path.getFileName().toString().endsWith(".in"))
-                    .sorted(Comparator.comparing(path -> path.getFileName().toString()))
-                    .toList();
-
-            if (inputFiles.isEmpty()) {
-                failSubmission(jobId, job, "SYSTEM_ERROR", "No testcase input files found");
+            String slug = job.getProblemSlug();
+            if (slug == null || slug.isBlank()) {
+                failSubmission(jobId, job, "SYSTEM_ERROR", "Problem slug is missing");
                 return;
             }
 
-            List<String> inputs = new ArrayList<>();
-            for (Path inputFile : inputFiles) {
-                inputs.add(readFile(inputFile));
+            var questionResponse = questionServiceClient.getQuestionBySlug(slug);
+            var questionDTO = questionResponse != null ? questionResponse.getData() : null;
+            if (questionDTO == null) {
+                failSubmission(jobId, job, "SYSTEM_ERROR", "Question metadata not found");
+                return;
             }
 
-            containerPoolManager.executeSubmissionTestcases(job, inputs)
-                    .thenCompose(results -> buildTestcaseResults(inputFiles, inputs, results, questionDTO, problemDir, job, jobId))
-                    .thenAccept(testcaseResults -> processAllResults(testcaseResults, jobId, job))
-                    .exceptionally(ex -> {
-                        failSubmission(jobId, job, "SYSTEM_ERROR", ex.getMessage());
-                        return null;
-                    });
+            Path problemDir = Path.of(basePath).toAbsolutePath().normalize().resolve(slug);
+            if (!Files.exists(problemDir)) {
+                failSubmission(jobId, job, "SYSTEM_ERROR", "Testcases not found");
+                return;
+            }
+
+            try (var stream = Files.list(problemDir)) {
+                List<Path> inputFiles = stream
+                        .filter(path -> path.getFileName().toString().endsWith(".in"))
+                        .sorted(Comparator.comparing(path -> path.getFileName().toString()))
+                        .toList();
+
+                if (inputFiles.isEmpty()) {
+                    failSubmission(jobId, job, "SYSTEM_ERROR", "No testcase input files found");
+                    return;
+                }
+
+                List<String> inputs = new ArrayList<>();
+                for (Path inputFile : inputFiles) {
+                    inputs.add(readFile(inputFile));
+                }
+
+                containerPoolManager.executeSubmissionTestcases(job, inputs)
+                        .thenCompose(results -> buildTestcaseResults(inputFiles, inputs, results, questionDTO, problemDir, job, jobId))
+                        .thenAccept(testcaseResults -> processAllResults(testcaseResults, jobId, job))
+                        .exceptionally(ex -> {
+                            failSubmission(jobId, job, "SYSTEM_ERROR", ex.getMessage());
+                            return null;
+                        });
+            }
 
         } catch (Exception e) {
             failSubmission(jobId, job, "SYSTEM_ERROR", e.getMessage());
@@ -258,11 +276,15 @@ public class CodeExecutionConsumer {
     }
 
     private CompletableFuture<ExecutionResult> executeInternal(ExecutionJob job) {
-        return containerPoolManager.executeCpp(job);
+        return containerPoolManager.execute(job);
     }
 
     private void failSubmission(String jobId, ExecutionJob job, String verdict, String message) {
-        redisService.markError(jobId, verdict, message, 0, job.getSourceCode(), job.getLanguage(), 0, 0);
+        try {
+            redisService.markError(jobId, verdict, message, 0, job.getSourceCode(), job.getLanguage(), 0, 0);
+        } catch (Exception e) {
+            log.warn("Failed to write execution error state for {}", jobId, e);
+        }
 
         SubmissionUpdate dto = new SubmissionUpdate();
         dto.setVerdict(verdict);
@@ -276,6 +298,23 @@ public class CodeExecutionConsumer {
             submissionClient.updateSubmission(jobId, dto);
         } catch (Exception e) {
             log.warn("Failed to mark submission {} as {}", jobId, verdict, e);
+        }
+    }
+
+    private void markJobFailure(ExecutionJob job, String verdict, String message) {
+        if (job == null) {
+            return;
+        }
+
+        if ("SUBMIT".equals(job.getTypeOfJob())) {
+            failSubmission(job.getJobId(), job, verdict, message);
+            return;
+        }
+
+        try {
+            redisService.markError(job.getJobId(), verdict, message, 0, job.getSourceCode(), job.getLanguage(), 0, 0);
+        } catch (Exception e) {
+            log.warn("Failed to mark run job {} as {}", job.getJobId(), verdict, e);
         }
     }
 

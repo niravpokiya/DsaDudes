@@ -4,7 +4,7 @@ package com.DsaDude.Execution_Submission_Service.DTO;
 import lombok.Data;
 
 @Data
-public class ExecutionJob {
+public class    ExecutionJob {
     public String jobId;
     public String language;
     public String sourceCode;
