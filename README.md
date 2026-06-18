@@ -16,6 +16,9 @@ The project is built with a React frontend and Spring Boot microservices. Code e
 - Admin dashboard for problem creation, editing, and testcase upload
 - Isolated code execution using Docker containers
 
+## High Level Architecture
+![High Level Architecture](./High-level-architecture.png)
+
 ## Code Execution Architecture
 
 ![Code Execution Architecture](./code-execution-architecture.png)
